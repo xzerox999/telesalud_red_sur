@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sistema de Gestión y Consulta de Atenciones de Telesalud (Teleatiendo vs Otros Sistemas) - Red de Salud">
+    <meta name="theme-color" content="#0284c7">
+    <title>Sistema de Telesalud | Teleatiendo & Otros Sistemas</title>
+
+    <!-- Fuentes Google (Inter y Outfit) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Estilos de la Aplicación -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/public.css">
+    <link rel="stylesheet" href="css/print.css">
+
+    <!-- Librerías Externas (CDNs de alta velocidad) -->
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.45.0/dist/apexcharts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+
+    <!-- ====================================================================
+         BARRA DE NAVEGACIÓN PRINCIPAL
+         ==================================================================== -->
+    <header class="navbar-custom">
+        <div class="nav-container">
+            <!-- Marca y Logo -->
+            <div class="brand-section">
+                <div class="brand-logo-icon">
+                    <i data-lucide="activity" class="icon-md"></i>
+                </div>
+                <div class="brand-text">
+                    <h1>TELESALUD</h1>
+                    <span>RED DE SALUD</span>
+                </div>
+            </div>
+
+            <!-- Selector de Pestañas (Consulta Personal vs Administrador) -->
+            <nav class="tab-navigation" role="tablist">
+                <button type="button" id="tab-btn-consulta" class="nav-tab-btn active" role="tab" aria-selected="true">
+                    <i data-lucide="user-search" class="icon-sm"></i>
+                    <span>Consulta Personal</span>
+                </button>
+                <button type="button" id="tab-btn-admin" class="nav-tab-btn" role="tab" aria-selected="false">
+                    <i data-lucide="shield-check" class="icon-sm"></i>
+                    <span>Administrador</span>
+                    <span class="tab-badge-lock">
+                        <i id="admin-tab-lock-icon" data-lucide="lock" class="icon-xs text-muted"></i>
+                    </span>
+                </button>
+            </nav>
+
+            <!-- Acciones Rápidas (Badge de conexión, Sincronizar, Configuración) -->
+            <div class="nav-actions">
+                <div id="data-source-badge" class="badge badge-neutral" title="Estado de la fuente de datos">
+                    <i data-lucide="database" class="icon-xs"></i> Base Local
+                </div>
+                <button type="button" id="btn-sync-data" class="btn btn-outline btn-sm" title="Sincronizar con Google Sheets">
+                    <i data-lucide="refresh-cw" class="icon-xs"></i>
+                    <span class="d-none d-md-inline">Sincronizar</span>
+                </button>
+                <button type="button" id="btn-open-settings" class="btn btn-outline btn-sm btn-icon-only" title="Configurar Google Sheet">
+                    <i data-lucide="settings" class="icon-xs"></i>
+                </button>
+                <button type="button" id="admin-logout-btn" class="btn btn-outline btn-sm text-danger" style="display: none;" title="Cerrar Sesión Admin">
+                    <i data-lucide="log-out" class="icon-xs"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ====================================================================
+         CONTENIDO PRINCIPAL
+         ==================================================================== -->
+    <main class="main-wrapper">
+
+        <!-- ================================================================
+             PESTAÑA 1: CONSULTA PÚBLICA DE PERSONAL (SIN CONTRASEÑA)
+             ================================================================ -->
+        <section id="view-consulta" class="tab-content-view">
+            
+            <!-- Hero de Búsqueda -->
+            <div class="search-hero">
+                <h2 class="search-hero-title">Consulta de Producción en Telesalud</h2>
+                <p class="search-hero-desc">
+                    Consulte sus atenciones registradas en <strong>Teleatiendo (TLH)</strong> y <strong>Otros Sistemas</strong>. Ingrese su Número de Documento (DNI, Carnet de Extranjería o Pasaporte).
+                </p>
+
+                <div class="search-input-wrapper">
+                    <i data-lucide="search" class="icon-sm"></i>
+                    <input type="text" id="public-doc-input" placeholder="Ingrese su DNI o N° de Documento (ej. 46358841)..." autocomplete="off" maxlength="20">
+                    <button type="button" id="public-search-btn" class="btn btn-primary btn-search">
+                        <i data-lucide="arrow-right" class="icon-xs"></i>
+                        <span>Consultar</span>
+                    </button>
+                </div>
+
+                <!-- Sugerencias rápidas para demostración -->
+                <div class="quick-samples">
+                    <span>Ejemplos rápidos:</span>
+                    <button type="button" class="quick-sample-dni" data-dni="46358841">46358841 (Obstetriz)</button>
+                    <button type="button" class="quick-sample-dni" data-dni="71288435">71288435 (Enfermero)</button>
+                    <button type="button" class="quick-sample-dni" data-dni="41480347">41480347 (Técnica)</button>
+                </div>
+            </div>
+
+            <!-- Estado Inicial: Guía de Uso -->
+            <div id="public-initial-state" class="search-initial-box">
+                <i data-lucide="file-badge-2"></i>
+                <h3>Búsqueda Rápida de Atenciones</h3>
+                <p>Escriba su número de documento en el buscador superior para ver su historial consolidado de actividades por meses, años y plataformas.</p>
+            </div>
+
+            <!-- Estado Vacío: No Encontrado -->
+            <div id="public-empty-state" class="search-initial-box" style="display: none;">
+                <i data-lucide="alert-circle" class="text-warning"></i>
+                <h3>No se encontraron registros</h3>
+                <p>No se encontraron atenciones registradas para el documento <strong id="searched-doc-number"></strong>. Verifique que el número esté correctamente escrito o consulte con el Administrador.</p>
+            </div>
+
+            <!-- Contenedor de Resultados (Perfil y Matriz) -->
+            <div id="public-result-container" style="display: none;">
+                
+                <!-- Ficha de Identidad del Profesional -->
+                <div class="profile-card">
+                    <div class="profile-main-info">
+                        <div class="profile-avatar">
+                            <i data-lucide="user-check" class="icon-lg"></i>
+                        </div>
+                        <div>
+                            <h3 id="personal-name" class="profile-name">-</h3>
+                            <div class="profile-tags">
+                                <span class="tag-profession">
+                                    <i data-lucide="briefcase" class="icon-xs"></i>
+                                    <span id="personal-profesion">-</span>
+                                </span>
+                                <span class="tag-location">
+                                    <i data-lucide="map-pin" class="icon-xs"></i>
+                                    <span>MicroRed: <strong id="personal-microred">-</strong></span>
+                                </span>
+                                <span class="tag-location">
+                                    <i data-lucide="building" class="icon-xs"></i>
+                                    <span>EESS: <strong id="personal-estab">-</strong></span>
+                                </span>
+                                <span class="tag-location">
+                                    <i data-lucide="id-card" class="icon-xs"></i>
+                                    <span>Doc: <strong id="personal-dni">-</strong></span>
+                                </span>
+                                <span class="tag-location">
+                                    <i data-lucide="award" class="icon-xs"></i>
+                                    <span>Colegio: <strong id="personal-colegio">-</strong></span>
+                                </span>
+                                <span class="tag-location">
+                                    <i data-lucide="badge-check" class="icon-xs"></i>
+                                    <span>Condición: <strong id="personal-condicion">-</strong></span>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botón de Imprimir Constancia -->
+                    <button type="button" id="btn-print-certificate" class="btn btn-outline">
+                        <i data-lucide="printer" class="icon-xs"></i>
+                        <span>Imprimir Constancia</span>
+                    </button>
+                </div>
+
+                <!-- Tarjetas KPI Personales -->
+                <div class="kpi-grid">
+                    <div class="kpi-card kpi-card-tlh">
+                        <div class="kpi-icon-box">
+                            <i data-lucide="check-circle" class="icon-md"></i>
+                        </div>
+                        <div class="kpi-content">
+                            <div class="kpi-label">Plataforma Teleatiendo (TLH)</div>
+                            <div class="kpi-value-row">
+                                <div id="personal-kpi-tlh" class="kpi-value">0</div>
+                                <span id="personal-kpi-tlh-pct" class="badge badge-online">0%</span>
+                            </div>
+                            <div class="kpi-subtext">Registros oficiales TLH</div>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card kpi-card-otros">
+                        <div class="kpi-icon-box">
+                            <i data-lucide="shuffle" class="icon-md"></i>
+                        </div>
+                        <div class="kpi-content">
+                            <div class="kpi-label">Otros Sistemas</div>
+                            <div class="kpi-value-row">
+                                <div id="personal-kpi-otros" class="kpi-value">0</div>
+                                <span id="personal-kpi-otros-pct" class="badge badge-neutral">0%</span>
+                            </div>
+                            <div class="kpi-subtext">Otros lotes HIS</div>
+                        </div>
+                    </div>
+
+                    <div class="kpi-card">
+                        <div class="kpi-icon-box">
+                            <i data-lucide="activity" class="icon-md"></i>
+                        </div>
+                        <div class="kpi-content">
+                            <div class="kpi-label">Total General Atenciones</div>
+                            <div class="kpi-value-row">
+                                <div id="personal-kpi-total" class="kpi-value">0</div>
+                            </div>
+                            <div class="kpi-subtext">Producción total acumulada</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Matriz Detallada de Producción por Modalidad y Periodo -->
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-title">
+                            <i data-lucide="table" class="icon-sm text-primary"></i>
+                            <span>Desglose Mensual por Modalidades de Telesalud</span>
+                        </h4>
+                        <div class="d-flex gap-2">
+                            <span class="badge badge-tlh"><i data-lucide="circle-dot" class="icon-xs"></i> Teleatiendo (TLH)</span>
+                            <span class="badge badge-otros"><i data-lucide="circle" class="icon-xs"></i> Otros Sistemas</span>
+                        </div>
+                    </div>
+
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover m-0">
+                                <thead>
+                                    <tr>
+                                        <th style="min-width: 140px;">Periodo</th>
+                                        <th style="min-width: 160px;">Plataforma</th>
+                                        <th class="text-center" title="Telemonitoreo (99499.10)">Telemonitoreo</th>
+                                        <th class="text-center" title="Teleorientación Síncrona (99499.08)">Teleorientación Síncrona</th>
+                                        <th class="text-center" title="Teleinterconsulta Síncrona (99499.01)">Teleinterconsulta Síncrona</th>
+                                        <th class="text-center" title="Teleinterconsulta Asíncrona (99499.02)">Teleinterconsulta Asíncrona</th>
+                                        <th class="text-center" title="Teleconsulta en Línea (99499.03)">Teleconsulta Línea</th>
+                                        <th class="text-center" title="Teleorientación Asíncrona (99499.09)">Teleorientación Asíncrona</th>
+                                        <th class="text-center" title="Telemamografía Fuera de Línea (99499.11)">Telemamografía</th>
+                                        <th class="text-center bg-highlight" style="min-width: 100px;">Total Mes</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="personal-matrix-tbody">
+                                    <!-- Filas generadas dinámicamente -->
+                                </tbody>
+                                <tfoot id="personal-matrix-tfoot">
+                                    <!-- Totales acumulados -->
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ================================================================
+             PESTAÑA 2: PORTAL DE ADMINISTRADOR (PROTEGIDO)
+             ================================================================ -->
+        <section id="view-admin" class="tab-content-view" style="display: none;">
+
+            <!-- Indicadores Ejecutivos (KPIs) -->
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-icon-box">
+                        <i data-lucide="layers" class="icon-md"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <div class="kpi-label">Total Atenciones</div>
+                        <div class="kpi-value-row">
+                            <div id="kpi-total-atenciones" class="kpi-value">0</div>
+                        </div>
+                        <div class="kpi-subtext">Registros en el periodo</div>
+                    </div>
+                </div>
+
+                <div class="kpi-card kpi-card-tlh">
+                    <div class="kpi-icon-box">
+                        <i data-lucide="check-circle" class="icon-md"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <div class="kpi-label">Teleatiendo (TLH)</div>
+                        <div class="kpi-value-row">
+                            <div id="kpi-tlh-total" class="kpi-value">0</div>
+                            <span id="kpi-tlh-pct" class="badge badge-online">0%</span>
+                        </div>
+                        <div class="kpi-subtext">Plataforma oficial TLH</div>
+                    </div>
+                </div>
+
+                <div class="kpi-card kpi-card-otros">
+                    <div class="kpi-icon-box">
+                        <i data-lucide="shuffle" class="icon-md"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <div class="kpi-label">Otros Sistemas</div>
+                        <div class="kpi-value-row">
+                            <div id="kpi-otros-total" class="kpi-value">0</div>
+                            <span id="kpi-otros-pct" class="badge badge-neutral">0%</span>
+                        </div>
+                        <div class="kpi-subtext">Otros sistemas locales</div>
+                    </div>
+                </div>
+
+                <div class="kpi-card kpi-card-staff">
+                    <div class="kpi-icon-box">
+                        <i data-lucide="users" class="icon-md"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <div class="kpi-label">Personal Activo</div>
+                        <div class="kpi-value-row">
+                            <div id="kpi-personal-activo" class="kpi-value">0</div>
+                        </div>
+                        <div class="kpi-subtext">Profesionales registrantes</div>
+                    </div>
+                </div>
+
+                <div class="kpi-card kpi-card-top">
+                    <div class="kpi-icon-box">
+                        <i data-lucide="award" class="icon-md"></i>
+                    </div>
+                    <div class="kpi-content">
+                        <div class="kpi-label">Establecimiento Líder</div>
+                        <div class="kpi-value-row">
+                            <div id="kpi-top-estab" class="kpi-value" style="font-size: 1.15rem;">-</div>
+                        </div>
+                        <div id="kpi-top-estab-count" class="kpi-subtext">0 atenciones</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Barra de Filtros Multidimensionales -->
+            <div class="filter-card">
+                <div class="filter-header">
+                    <div class="card-title">
+                        <i data-lucide="filter" class="icon-sm text-primary"></i>
+                        <span>Filtros Dinámicos del Reporte</span>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" id="admin-btn-reset-filters" class="btn btn-outline btn-sm">
+                            <i data-lucide="rotate-ccw" class="icon-xs"></i>
+                            <span>Restablecer</span>
+                        </button>
+                        <button type="button" id="btn-export-excel-consolidado" class="btn btn-outline btn-sm">
+                            <i data-lucide="download" class="icon-xs"></i>
+                            <span>Excel Consolidado</span>
+                        </button>
+                        <button type="button" id="btn-export-excel-pivot" class="btn btn-primary btn-sm">
+                            <i data-lucide="file-spreadsheet" class="icon-xs"></i>
+                            <span>Excel Tabla MicroRed</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="filter-grid">
+                    <div class="form-group mb-0">
+                        <label class="form-label">Año</label>
+                        <select id="admin-filter-anio" class="form-control">
+                            <option value="">Todos los Años</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-0">
+                        <label class="form-label">Mes</label>
+                        <select id="admin-filter-mes" class="form-control">
+                            <option value="">Todos los Meses</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-0">
+                        <label class="form-label">MicroRed</label>
+                        <select id="admin-filter-microred" class="form-control">
+                            <option value="">Todas las MicroRedes</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-0">
+                        <label class="form-label">Establecimiento</label>
+                        <select id="admin-filter-estab" class="form-control">
+                            <option value="">Todos los Establecimientos</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-0">
+                        <label class="form-label">Profesión</label>
+                        <select id="admin-filter-prof" class="form-control">
+                            <option value="">Todas las Profesiones</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-0">
+                        <label class="form-label">Sistema / Lote</label>
+                        <select id="admin-filter-sistema" class="form-control">
+                            <option value="">Todos los Sistemas</option>
+                            <option value="TLH">Teleatiendo (TLH)</option>
+                            <option value="OTROS">Otros Sistemas</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-0 filter-search-box">
+                        <label class="form-label">Búsqueda Rápida</label>
+                        <div style="position: relative;">
+                            <i data-lucide="search" class="icon-xs"></i>
+                            <input type="text" id="admin-filter-search" class="form-control" placeholder="Buscar por personal, DNI, establecimiento o microred...">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fila: Resumen Consolidado & Gráfico TLH vs Otros -->
+            <div class="admin-row-grid">
+                <!-- Tabla Consolidada (Hoja Consolidado) -->
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-title">
+                            <i data-lucide="clipboard-list" class="icon-sm text-primary"></i>
+                            <span>Resumen Consolidado de Actividades</span>
+                        </h4>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover m-0">
+                                <thead>
+                                    <tr>
+                                        <th>Actividad</th>
+                                        <th class="text-end text-primary">Teleatiendo</th>
+                                        <th class="text-end text-warning-dark">Otros Sist.</th>
+                                        <th class="text-end">Total</th>
+                                        <th class="text-end">% Total</th>
+                                        <th class="text-end">% TLH</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="admin-consolidado-tbody">
+                                    <!-- Generado dinámicamente -->
+                                </tbody>
+                                <tfoot id="admin-consolidado-tfoot">
+                                    <!-- Totales -->
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráfico Dona: Teleatiendo vs Otros -->
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-title">
+                            <i data-lucide="pie-chart" class="icon-sm text-primary"></i>
+                            <span>Distribución: Teleatiendo vs Otros Sistemas</span>
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <div id="chart-teleatiendo-vs-otros"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fila de Gráficos Analíticos -->
+            <div class="charts-grid">
+                <div class="chart-card">
+                    <div class="chart-title">
+                        <i data-lucide="bar-chart-3" class="icon-sm text-primary"></i>
+                        <span>Top 10 Establecimientos con Mayor Producción</span>
+                    </div>
+                    <div id="chart-top-establecimientos"></div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-title">
+                        <i data-lucide="user-plus" class="icon-sm text-primary"></i>
+                        <span>Atenciones por Grupo Ocupacional / Profesión</span>
+                    </div>
+                    <div id="chart-top-profesiones"></div>
+                </div>
+
+                <div class="chart-card">
+                    <div class="chart-title">
+                        <i data-lucide="activity" class="icon-sm text-primary"></i>
+                        <span>Distribución por Modalidad de Telesalud</span>
+                    </div>
+                    <div id="chart-distribucion-modalidad"></div>
+                </div>
+            </div>
+
+            <!-- Tabla Dinámica Pivot: MicroRed -> Establecimiento (Hoja TABLA) -->
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <h4 class="card-title">
+                            <i data-lucide="network" class="icon-sm text-primary"></i>
+                            <span>Reporte Dinámico por MicroRed y Establecimiento</span>
+                        </h4>
+                        <small class="text-muted">Haga clic en una MicroRed para colapsar o expandir sus establecimientos</small>
+                    </div>
+                </div>
+                <div class="card-body p-0" id="admin-pivot-container">
+                    <!-- Tabla inyectada por AdminView -->
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- ====================================================================
+         PLANTILLA DE IMPRESIÓN OFICIAL (SOLO VISIBLE AL IMPRIMIR)
+         ==================================================================== -->
+    <div id="print-certificate-container">
+        <div id="print-certificate-content">
+            <!-- Rellenado por PublicView al imprimir -->
+        </div>
+    </div>
+
+    <!-- ====================================================================
+         MODAL DE INICIO DE SESIÓN DE ADMINISTRADOR
+         ==================================================================== -->
+    <div id="modal-admin-login" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="brand-logo-icon" style="width: 36px; height: 36px;">
+                        <i data-lucide="lock" class="icon-sm"></i>
+                    </div>
+                    <h3 class="card-title">Acceso de Administrador</h3>
+                </div>
+                <button type="button" id="btn-close-login-modal" class="btn btn-outline btn-sm btn-icon-only">
+                    <i data-lucide="x" class="icon-xs"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted fs-sm mb-3">
+                    Ingrese la contraseña de seguridad para acceder al panel de consolidado, reportes por microred y estadísticas de gestión.
+                </p>
+                <div class="form-group">
+                    <label class="form-label">Contraseña de Administrador</label>
+                    <input type="password" id="admin-password-input" class="form-control" placeholder="••••••••••••" autocomplete="current-password">
+                    <small id="admin-login-error" class="text-danger" style="display: none; font-size: 0.75rem; margin-top: 4px;">
+                        Contraseña incorrecta.
+                    </small>
+                </div>
+                <div class="p-2 bg-light rounded" style="font-size: 0.75rem; color: var(--text-muted);">
+                    <i data-lucide="info" class="icon-xs text-primary"></i>
+                    Clave predeterminada: <code>AdminTelesalud2026*</code>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="btn-cancel-login" class="btn btn-outline btn-sm">Cancelar</button>
+                <button type="button" id="btn-login-submit" class="btn btn-primary btn-sm">
+                    <i data-lucide="unlock" class="icon-xs"></i>
+                    <span>Ingresar</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================================
+         MODAL DE CONFIGURACIÓN DE GOOGLE SHEETS
+         ==================================================================== -->
+    <div id="modal-settings" class="modal-overlay">
+        <div class="modal-card" style="max-width: 580px;">
+            <div class="modal-header">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="brand-logo-icon" style="width: 36px; height: 36px; background: #10b981;">
+                        <i data-lucide="cloud" class="icon-sm"></i>
+                    </div>
+                    <h3 class="card-title">Conexión con Google Sheets (Nube Gratis)</h3>
+                </div>
+                <button type="button" id="btn-close-settings" class="btn btn-outline btn-sm btn-icon-only">
+                    <i data-lucide="x" class="icon-xs"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted fs-sm mb-3">
+                    Para conectar su hoja de Google Sheets y actualizar los datos en tiempo real:
+                </p>
+                <ol style="font-size: 0.8rem; color: var(--text-muted); padding-left: 1.25rem; margin-bottom: 1rem; line-height: 1.6;">
+                    <li>En su Google Sheet, vaya a <strong>Archivo &gt; Compartir &gt; Publicar en la web</strong>.</li>
+                    <li>Seleccione la pestaña de datos y el formato <strong>Valores separados por comas (.csv)</strong>.</li>
+                    <li>Haga clic en <strong>Publicar</strong>, copie el enlace y péguelo a continuación:</li>
+                </ol>
+                <div class="form-group">
+                    <label class="form-label">URL del CSV Publicado de Google Sheets</label>
+                    <input type="text" id="settings-sheet-url-input" class="form-control" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="btn-save-settings" class="btn btn-primary btn-sm">
+                    <i data-lucide="save" class="icon-xs"></i>
+                    <span>Guardar y Sincronizar</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Indicador de Carga Global -->
+    <div id="global-loader" class="global-loader-overlay" style="display: none;">
+        <div class="spinner"></div>
+        <p style="margin-top: 1rem; font-weight: 700; color: var(--text-main);">Procesando registros de Telesalud...</p>
+    </div>
+
+    <!-- Contenedor de Notificaciones Toast -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Footer -->
+    <footer class="footer-custom">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2" style="max-width: 1440px; margin: 0 auto;">
+            <span>&copy; 2026 <strong>Unidad de Telesalud y Telemedicina</strong> - Sistema Integral de Producción</span>
+            <span id="data-last-sync-time" style="color: var(--text-light);">Cargando...</span>
+        </div>
+    </footer>
+
+    <!-- Carga del Dataset Local por Defecto (Garantiza funcionamiento instantáneo offline) -->
+    <script src="data/sample_data.js"></script>
+
+    <!-- Scripts de la Aplicación -->
+    <script src="js/config.js"></script>
+    <script src="js/dataService.js"></script>
+    <script src="js/dataEngine.js"></script>
+    <script src="js/exportService.js"></script>
+    <script src="js/adminView.js"></script>
+    <script src="js/publicView.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,221 @@
+/* ==========================================================================
+   PRINT STYLESHEET - CONSTANCIA OFICIAL DE ATENCIONES DE TELESALUD
+   Optimizado para generar PDFs e impresiones institucionales perfectas
+   ========================================================================== */
+
+#print-certificate-container {
+    display: none;
+}
+
+@media print {
+    /* Ocultar elementos de la interfaz web */
+    body * {
+        visibility: hidden;
+    }
+
+    .navbar-custom,
+    .tab-navigation,
+    .nav-actions,
+    .search-hero,
+    .profile-card,
+    .kpi-grid,
+    .card-header .btn,
+    .footer-custom,
+    .global-loader-overlay,
+    .toast-container,
+    .modal-overlay,
+    #view-admin,
+    #public-result-container,
+    #public-initial-state,
+    #public-empty-state {
+        display: none !important;
+    }
+
+    /* Mostrar únicamente el contenedor de constancia */
+    #print-certificate-container,
+    #print-certificate-container * {
+        visibility: visible;
+    }
+
+    #print-certificate-container {
+        display: block !important;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 20mm 15mm;
+        background: white;
+        color: #000;
+        font-family: Arial, sans-serif;
+        font-size: 11pt;
+    }
+
+    @page {
+        size: A4 portrait;
+        margin: 10mm;
+    }
+
+    /* Estructura de la Constancia */
+    .cert-header {
+        border-bottom: 2px solid #0f172a;
+        padding-bottom: 12px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+    }
+
+    .cert-logo-box h2 {
+        font-size: 14pt;
+        font-weight: bold;
+        margin: 0 0 4px 0;
+        color: #0f172a;
+    }
+
+    .cert-logo-box p {
+        font-size: 9pt;
+        color: #475569;
+        margin: 0;
+        letter-spacing: 0.05em;
+    }
+
+    .cert-code {
+        text-align: right;
+    }
+
+    .cert-code span {
+        display: block;
+        font-size: 10pt;
+        font-weight: bold;
+        color: #0284c7;
+    }
+
+    .cert-code small {
+        font-size: 8pt;
+        color: #64748b;
+    }
+
+    .cert-intro {
+        text-align: justify;
+        line-height: 1.4;
+        margin-bottom: 15px;
+        font-size: 10pt;
+    }
+
+    .cert-info-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+        background: #f8fafc;
+        border: 1px solid #cbd5e1;
+    }
+
+    .cert-info-table td {
+        padding: 6px 10px;
+        font-size: 9.5pt;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .cert-info-table td.label {
+        width: 22%;
+        font-weight: bold;
+        color: #334155;
+        background: #f1f5f9;
+    }
+
+    .cert-info-table td.val {
+        width: 28%;
+    }
+
+    .cert-section-title {
+        font-size: 10.5pt;
+        font-weight: bold;
+        margin: 15px 0 8px 0;
+        color: #0f172a;
+        text-transform: uppercase;
+        border-bottom: 1px solid #cbd5e1;
+        padding-bottom: 4px;
+    }
+
+    .cert-matrix-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 15px;
+        font-size: 9pt;
+    }
+
+    .cert-matrix-table th {
+        background: #f1f5f9;
+        color: #0f172a;
+        font-weight: bold;
+        padding: 6px;
+        border: 1px solid #cbd5e1;
+        text-align: center;
+    }
+
+    .cert-matrix-table td {
+        padding: 5px;
+        border: 1px solid #cbd5e1;
+    }
+
+    .cert-grand-total {
+        background: #e2e8f0;
+        font-weight: bold;
+    }
+
+    .cert-summary-box {
+        display: flex;
+        justify-content: space-between;
+        background: #f8fafc;
+        border: 1px solid #cbd5e1;
+        padding: 10px 15px;
+        margin-bottom: 40px;
+        font-size: 9.5pt;
+    }
+
+    .cert-summary-box .summary-item strong {
+        margin-left: 6px;
+        color: #0f172a;
+    }
+
+    .cert-footer-signature {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-top: 50px;
+    }
+
+    .cert-date {
+        font-size: 9pt;
+        color: #475569;
+    }
+
+    .cert-signature-line {
+        text-align: center;
+        width: 240px;
+    }
+
+    .cert-signature-line .line {
+        border-top: 1px solid #000;
+        margin-bottom: 6px;
+    }
+
+    .cert-signature-line p {
+        font-weight: bold;
+        font-size: 9.5pt;
+        margin: 0;
+    }
+
+    .cert-signature-line small {
+        font-size: 8pt;
+        color: #475569;
+    }
+
+    .font-bold { font-weight: bold; }
+    .font-semibold { font-weight: 600; }
+    .text-center { text-align: center; }
+    .text-large { font-size: 11pt; }
+    .text-blue { color: #0284c7; }
+    .text-orange { color: #d97706; }
+}

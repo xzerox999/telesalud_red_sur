@@ -1,0 +1,281 @@
+/* ==========================================================================
+   PUBLIC VIEW CSS - BUSCADOR DE PERSONAL Y MATRIZ DE MODALIDADES
+   ========================================================================== */
+
+/* Hero de Búsqueda */
+.search-hero {
+    background: linear-gradient(135deg, #0369a1 0%, #0f172a 100%);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem 2rem;
+    color: white;
+    margin-bottom: 2rem;
+    box-shadow: var(--shadow-lg);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.search-hero::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(14, 165, 233, 0.2) 0%, rgba(255,255,255,0) 70%);
+    border-radius: 50%;
+}
+
+.search-hero-title {
+    font-size: 1.75rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+}
+
+.search-hero-desc {
+    font-size: 0.95rem;
+    color: #bae6fd;
+    max-width: 600px;
+    margin: 0 auto 1.75rem auto;
+}
+
+/* Caja de Búsqueda Principal */
+.search-input-wrapper {
+    max-width: 580px;
+    margin: 0 auto;
+    display: flex;
+    background: white;
+    padding: 6px;
+    border-radius: var(--radius-full);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25);
+    align-items: center;
+}
+
+.search-input-wrapper i {
+    color: var(--text-muted);
+    margin-left: 1rem;
+    margin-right: 0.5rem;
+}
+
+.search-input-wrapper input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-main);
+    background: transparent;
+    padding: 0.5rem 0.5rem;
+}
+
+.search-input-wrapper input::placeholder {
+    color: var(--text-light);
+    font-weight: 400;
+}
+
+.search-input-wrapper .btn-search {
+    border-radius: var(--radius-full);
+    padding: 0.65rem 1.5rem;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+/* Sugerencias Rápidas / Demos */
+.quick-samples {
+    margin-top: 1rem;
+    font-size: 0.8rem;
+    color: #93c5fd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.quick-sample-dni {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 0.2rem 0.6rem;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.quick-sample-dni:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Tarjeta de Perfil Profesional */
+.profile-card {
+    background: var(--bg-surface);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.profile-main-info {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.profile-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-full);
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-sm);
+}
+
+.profile-name {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: var(--text-main);
+    letter-spacing: -0.01em;
+    margin-bottom: 0.25rem;
+}
+
+.profile-tags {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.tag-profession {
+    background: #ede9fe;
+    color: #6d28d9;
+    font-weight: 700;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-full);
+}
+
+.tag-location {
+    background: #f1f5f9;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+/* Badges de Plataforma (TLH vs Otros) */
+.badge-system {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: var(--radius-full);
+    white-space: nowrap;
+}
+
+.badge-tlh {
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+}
+
+.badge-otros {
+    background: #fef3c7;
+    color: #b45309;
+    border: 1px solid #fde68a;
+}
+
+/* Matriz de Atenciones por Modalidad */
+.period-row-tlh td {
+    background-color: #ffffff;
+}
+
+.period-row-otros td {
+    background-color: #fafaf9;
+}
+
+.period-subtotal-row {
+    background-color: #f1f5f9 !important;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.cell-active {
+    background-color: rgba(2, 132, 199, 0.05);
+}
+
+.period-title {
+    font-weight: 800;
+    font-size: 0.95rem;
+}
+
+.bg-subtle-primary {
+    background-color: #f0f9ff !important;
+}
+
+.bg-subtle-warning {
+    background-color: #fffbeb !important;
+}
+
+.general-total-tlh-row {
+    background: #f0f9ff;
+    border-top: 2px solid var(--primary);
+}
+
+.general-total-otros-row {
+    background: #fffbeb;
+}
+
+.general-grand-total-row {
+    background: #0f172a !important;
+    color: white !important;
+}
+
+.general-grand-total-row td {
+    border-bottom: none;
+    color: white !important;
+}
+
+/* Estados Iniciales y Vacíos */
+.search-initial-box {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: var(--bg-surface);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+}
+
+.search-initial-box i {
+    width: 64px;
+    height: 64px;
+    color: var(--primary);
+    margin-bottom: 1rem;
+}
+
+.search-initial-box h3 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.search-initial-box p {
+    color: var(--text-muted);
+    max-width: 500px;
+    margin: 0 auto;
+}
