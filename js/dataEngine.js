@@ -198,38 +198,78 @@ class DataEngine {
 
     /**
      * Búsqueda y reporte individual para el Personal de Salud (DNI / Carnet Extranjería)
+     * Soporta búsqueda tolerante (ceros a la izquierda) y desglose por Establecimiento / MicroRed
      */
     getPersonalReport(records, docNumber) {
         if (!docNumber || !records) return null;
         
         const cleanDoc = String(docNumber).trim().toUpperCase();
+        const docNoZero = cleanDoc.replace(/^0+/, '');
         
-        // Filtrar registros que pertenezcan a este documento de personal
+        // Filtrar registros tolerando ceros a la izquierda (ej. 08123456 vs 8123456)
         const personalRecords = records.filter(r => {
             const doc = String(r.Numero_Documento_Personal || "").trim().toUpperCase();
-            return doc === cleanDoc;
+            if (!doc) return false;
+            if (doc === cleanDoc) return true;
+            if (docNoZero && doc.replace(/^0+/, '') === docNoZero) return true;
+            return false;
         });
 
         if (personalRecords.length === 0) return null;
 
-        // Extraer metadatos más recientes del personal
+        // Extraer sedes y establecimientos donde laboró o registró el profesional
+        const sedesMap = {};
+        personalRecords.forEach(r => {
+            const estab = this.cleanText(r.Nombre_Establecimiento) || "NO ESPECIFICADO";
+            const micro = this.cleanText(r.MicroRed) || "NO ESPECIFICADO";
+            const key = `${estab}__${micro}`;
+            if (!sedesMap[key]) {
+                sedesMap[key] = {
+                    establecimiento: estab,
+                    microred: micro,
+                    total: 0,
+                    tlh: 0,
+                    otros: 0,
+                    meses: new Set()
+                };
+            }
+            sedesMap[key].total++;
+            if (this.isTeleatiendo(r.Lote)) {
+                sedesMap[key].tlh++;
+            } else {
+                sedesMap[key].otros++;
+            }
+            const anio = r.Anio || "2026";
+            const mesNum = String(r.Mes || "1");
+            sedesMap[key].meses.add(`${CONFIG.MESES_NOMBRES[mesNum] || mesNum} ${anio}`);
+        });
+
+        const sedesList = Object.values(sedesMap).map(s => ({
+            ...s,
+            mesesTexto: Array.from(s.meses).join(", ")
+        })).sort((a, b) => b.total - a.total);
+
+        const principalSede = sedesList[0] || {};
         const sample = personalRecords[0];
+
         const info = {
-            numeroDocumento: cleanDoc,
+            numeroDocumento: sample.Numero_Documento_Personal || cleanDoc,
             nombre: sample.Personal || "No Registrado",
             profesion: sample.Descripcion_Profesion || "No Especificado",
             colegio: sample.Descripcion_Colegio || "No Especificado",
             condicion: sample.Descripcion_Condicion || "No Especificado",
-            microred: sample.MicroRed || "No Especificado",
-            establecimiento: sample.Nombre_Establecimiento || "No Especificado",
+            microred: principalSede.microred || sample.MicroRed || "No Especificado",
+            establecimiento: principalSede.establecimiento || sample.Nombre_Establecimiento || "No Especificado",
             red: sample.Red || "CUSCO SUR",
-            totalAtenciones: personalRecords.length
+            totalAtenciones: personalRecords.length,
+            sedes: sedesList,
+            hasMultipleSedes: sedesList.length > 1
         };
 
         // Modalidades oficiales
         const modalidadesKeys = CONFIG.MODALIDADES.map(m => m.key);
 
-        // Agrupar por Periodo (Año - Mes) y Sistema (Teleatiendo vs Otros)
+        // Agrupar por Periodo (Año - Mes) y Establecimiento
         const periodGroups = {};
         let totalTLH = 0;
         let totalOtros = 0;
@@ -238,23 +278,28 @@ class DataEngine {
             const anio = r.Anio || "2026";
             const mesNum = String(r.Mes || "1");
             const mesNombre = CONFIG.MESES_NOMBRES[mesNum] || `Mes ${mesNum}`;
-            const periodKey = `${anio}-${String(mesNum).padStart(2, "0")}`;
+            const estab = this.cleanText(r.Nombre_Establecimiento) || "NO ESPECIFICADO";
+            const micro = this.cleanText(r.MicroRed) || "NO ESPECIFICADO";
+            const groupKey = `${anio}-${String(mesNum).padStart(2, "0")}__${estab}`;
             const isTLH = this.isTeleatiendo(r.Lote);
             const itemDesc = this.cleanText(r.Descripcion_Item).toUpperCase();
 
-            if (!periodGroups[periodKey]) {
-                periodGroups[periodKey] = {
-                    periodKey,
+            if (!periodGroups[groupKey]) {
+                periodGroups[groupKey] = {
+                    groupKey,
+                    periodKey: `${anio}-${String(mesNum).padStart(2, "0")}`,
                     anio,
                     mesNum,
                     mesNombre,
+                    establecimiento: estab,
+                    microred: micro,
                     tlh: { total: 0 },
                     otros: { total: 0 },
                     totalPeriodo: 0
                 };
                 modalidadesKeys.forEach(k => {
-                    periodGroups[periodKey].tlh[k] = 0;
-                    periodGroups[periodKey].otros[k] = 0;
+                    periodGroups[groupKey].tlh[k] = 0;
+                    periodGroups[groupKey].otros[k] = 0;
                 });
             }
 
@@ -263,20 +308,20 @@ class DataEngine {
             let matchedKey = modalidadesKeys.find(k => normDesc.includes(this.stripAccents(k))) || "TELEMONITOREO";
 
             if (isTLH) {
-                periodGroups[periodKey].tlh[matchedKey]++;
-                periodGroups[periodKey].tlh.total++;
+                periodGroups[groupKey].tlh[matchedKey]++;
+                periodGroups[groupKey].tlh.total++;
                 totalTLH++;
             } else {
-                periodGroups[periodKey].otros[matchedKey]++;
-                periodGroups[periodKey].otros.total++;
+                periodGroups[groupKey].otros[matchedKey]++;
+                periodGroups[groupKey].otros.total++;
                 totalOtros++;
             }
 
-            periodGroups[periodKey].totalPeriodo++;
+            periodGroups[groupKey].totalPeriodo++;
         });
 
         // Ordenar periodos de forma descendente
-        const sortedPeriods = Object.values(periodGroups).sort((a, b) => b.periodKey.localeCompare(a.periodKey));
+        const sortedPeriods = Object.values(periodGroups).sort((a, b) => b.groupKey.localeCompare(a.groupKey));
 
         return {
             info: {

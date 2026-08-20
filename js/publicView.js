@@ -55,7 +55,7 @@ class PublicView {
     }
 
     /**
-     * Renderiza la ficha de identidad del profesional
+     * Renderiza la ficha de identidad del profesional y sus sedes
      */
     renderPersonalProfile(info) {
         this.setTxt("personal-name", info.nombre);
@@ -65,6 +65,26 @@ class PublicView {
         this.setTxt("personal-estab", info.establecimiento);
         this.setTxt("personal-colegio", info.colegio || "No Registrado");
         this.setTxt("personal-condicion", info.condicion || "No Registrado");
+
+        // Renderizar lista de sedes y rotaciones
+        const sedesContainer = document.getElementById("personal-sedes-container");
+        const sedesList = document.getElementById("personal-sedes-list");
+        if (sedesContainer && sedesList) {
+            if (info.sedes && info.sedes.length > 0) {
+                sedesContainer.style.display = "block";
+                sedesList.innerHTML = info.sedes.map(s => `
+                    <div class="sede-badge-card">
+                        <div class="d-flex flex-column">
+                            <span class="sede-badge-name">🏥 ${s.establecimiento}</span>
+                            <span class="sede-badge-micro">MR: ${s.microred} • Periodo(s): ${s.mesesTexto}</span>
+                        </div>
+                        <span class="sede-badge-count" title="${s.tlh} TLH / ${s.otros} Otros">${s.total.toLocaleString()} atenc.</span>
+                    </div>
+                `).join("");
+            } else {
+                sedesContainer.style.display = "none";
+            }
+        }
     }
 
     /**
@@ -79,7 +99,7 @@ class PublicView {
     }
 
     /**
-     * Renderiza la matriz detallada de atenciones por modalidad y sistema
+     * Renderiza la matriz detallada de atenciones por modalidad, sistema y establecimiento
      */
     renderProductionMatrix(report) {
         const tbody = document.getElementById("personal-matrix-tbody");
@@ -105,7 +125,11 @@ class PublicView {
                 <td class="fw-bold text-dark align-middle" rowspan="2">
                     <div class="d-flex flex-column">
                         <span class="period-title">${period.mesNombre} ${period.anio}</span>
-                        <small class="text-muted">Periodo: ${period.periodKey}</small>
+                        <div class="period-estab-badge" title="MicroRed: ${period.microred}">
+                            <i data-lucide="building" class="icon-xs"></i>
+                            <span>${period.establecimiento}</span>
+                        </div>
+                        <small class="text-muted" style="font-size: 0.7rem; margin-top: 2px;">MicroRed: ${period.microred}</small>
                     </div>
                 </td>
                 <td class="align-middle">
@@ -142,12 +166,12 @@ class PublicView {
             `;
             tbody.appendChild(trOtros);
 
-            // Fila Subtotal del Periodo
+            // Fila Subtotal del Periodo y Establecimiento
             const trSub = document.createElement("tr");
             trSub.className = "period-subtotal-row";
             trSub.innerHTML = `
                 <td colspan="2" class="text-end fw-bold text-muted">
-                    SUBTOTAL ${period.mesNombre.toUpperCase()} ${period.anio}:
+                    SUBTOTAL ${period.mesNombre.toUpperCase()} ${period.anio} (${period.establecimiento}):
                 </td>
                 ${modalidades.map(m => {
                     const sub = (period.tlh[m.key] || 0) + (period.otros[m.key] || 0);
@@ -197,7 +221,10 @@ class PublicView {
         report.periods.forEach(p => {
             matrixRowsHtml += `
                 <tr>
-                    <td rowspan="2" class="text-center font-bold" style="vertical-align: middle;">${p.mesNombre} ${p.anio}</td>
+                    <td rowspan="2" class="text-center font-bold" style="vertical-align: middle;">
+                        ${p.mesNombre} ${p.anio}<br>
+                        <small style="font-size: 0.72rem; color: #475569; font-weight: normal;">${p.establecimiento}</small>
+                    </td>
                     <td class="font-semibold text-blue">TELEATIENDO (TLH)</td>
                     ${report.modalidades.map(m => `<td class="text-center">${p.tlh[m.key] || '-'}</td>`).join('')}
                     <td class="text-center font-bold text-blue">${p.tlh.total}</td>
@@ -209,6 +236,10 @@ class PublicView {
                 </tr>
             `;
         });
+
+        const sedesText = info.sedes && info.sedes.length > 0 
+            ? info.sedes.map(s => `<strong>${s.establecimiento}</strong> (MR ${s.microred} - ${s.total} atenc.)`).join('<br>')
+            : info.establecimiento;
 
         certEl.innerHTML = `
             <div class="cert-header">
@@ -242,19 +273,17 @@ class PublicView {
                         <td class="val">${info.colegio}</td>
                     </tr>
                     <tr>
-                        <td class="label">MICRORED:</td>
-                        <td class="val">${info.microred}</td>
-                        <td class="label">ESTABLECIMIENTO:</td>
-                        <td class="val font-bold">${info.establecimiento}</td>
+                        <td class="label">ESTABLECIMIENTO(S) / SEDES:</td>
+                        <td class="val" colspan="3">${sedesText}</td>
                     </tr>
                 </table>
 
-                <h4 class="cert-section-title">DETALLE CONSOLIDADO POR MODALIDAD DE TELESALUD</h4>
+                <h4 class="cert-section-title">DETALLE CONSOLIDADO POR MODALIDAD Y ESTABLECIMIENTO</h4>
 
                 <table class="cert-matrix-table">
                     <thead>
                         <tr>
-                            <th>Periodo</th>
+                            <th>Periodo / Establecimiento</th>
                             <th>Plataforma</th>
                             ${report.modalidades.map(m => `<th>${m.label}</th>`).join('')}
                             <th>Total</th>

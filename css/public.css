@@ -81,32 +81,42 @@
     font-size: 0.9rem;
 }
 
-/* Sugerencias Rápidas / Demos */
-.quick-samples {
-    margin-top: 1rem;
-    font-size: 0.8rem;
-    color: #93c5fd;
+/* Nota de Ayuda para Ceros Iniciales */
+.search-tip-note {
+    margin-top: 1.25rem;
+    max-width: 620px;
+    margin-left: auto;
+    margin-right: auto;
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: var(--radius-md);
+    padding: 0.65rem 1.15rem;
+    font-size: 0.82rem;
+    color: #e0f2fe;
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
+    gap: 0.65rem;
+    text-align: left;
+    line-height: 1.45;
 }
 
-.quick-sample-dni {
-    background: rgba(255, 255, 255, 0.15);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    padding: 0.2rem 0.6rem;
-    border-radius: var(--radius-full);
-    font-size: 0.75rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: var(--transition);
+.search-tip-note i {
+    color: #38bdf8;
+    flex-shrink: 0;
 }
 
-.quick-sample-dni:hover {
-    background: rgba(255, 255, 255, 0.3);
+.search-tip-note strong {
+    color: #ffffff;
+}
+
+.search-tip-note code {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    color: #fed7aa;
+    font-weight: 700;
+    font-size: 0.85rem;
 }
 
 /* Tarjeta de Perfil Profesional */
@@ -178,6 +188,68 @@
     gap: 0.35rem;
 }
 
+/* Lista de Sedes y Establecimientos donde registró atenciones */
+.profile-sedes-container {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--border-color);
+    width: 100%;
+}
+
+.profile-sedes-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-light);
+    margin-bottom: 0.65rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.profile-sedes-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+
+.sede-badge-card {
+    background: #f8fafc;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 0.45rem 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.82rem;
+    transition: var(--transition);
+}
+
+.sede-badge-card:hover {
+    border-color: var(--primary);
+    background: #f0f9ff;
+}
+
+.sede-badge-name {
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.sede-badge-micro {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.sede-badge-count {
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    font-weight: 800;
+    font-size: 0.75rem;
+    padding: 0.15rem 0.55rem;
+    border-radius: var(--radius-full);
+}
+
 /* Badges de Plataforma (TLH vs Otros) */
 .badge-system {
     display: inline-flex;
@@ -223,6 +295,21 @@
 .period-title {
     font-weight: 800;
     font-size: 0.95rem;
+}
+
+.period-estab-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--primary-dark);
+    background: var(--primary-light);
+    padding: 0.2rem 0.55rem;
+    border-radius: 4px;
+    margin-top: 0.35rem;
+    border: 1px solid rgba(2, 132, 199, 0.2);
+    width: fit-content;
 }
 
 .bg-subtle-primary {

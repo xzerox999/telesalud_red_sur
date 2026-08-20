@@ -1,16 +1,20 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Sistema de Gestión y Consulta de Atenciones de Telesalud (Teleatiendo vs Otros Sistemas) - Red de Salud">
+    <meta name="description"
+        content="Sistema de Gestión y Consulta de Atenciones de Telesalud (Teleatiendo vs Otros Sistemas) - Red de Salud">
     <meta name="theme-color" content="#0284c7">
     <title>Sistema de Telesalud | Teleatiendo & Otros Sistemas</title>
 
     <!-- Fuentes Google (Inter y Outfit) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap"
+        rel="stylesheet">
 
     <!-- Estilos de la Aplicación -->
     <link rel="stylesheet" href="css/main.css">
@@ -21,10 +25,11 @@
     <!-- Librerías Externas (CDNs de alta velocidad) -->
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.45.0/dist/apexcharts.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.344.0/dist/umd/lucide.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
 </head>
+
 <body>
 
     <!-- ====================================================================
@@ -39,7 +44,7 @@
                 </div>
                 <div class="brand-text">
                     <h1>TELESALUD</h1>
-                    <span>RED DE SALUD</span>
+                    <span>RED DE SALUD CUSCO SUR</span>
                 </div>
             </div>
 
@@ -58,19 +63,18 @@
                 </button>
             </nav>
 
-            <!-- Acciones Rápidas (Badge de conexión, Sincronizar, Configuración) -->
+            <!-- Acciones Rápidas (Badge de conexión, Sincronizar) -->
             <div class="nav-actions">
                 <div id="data-source-badge" class="badge badge-neutral" title="Estado de la fuente de datos">
                     <i data-lucide="database" class="icon-xs"></i> Base Local
                 </div>
-                <button type="button" id="btn-sync-data" class="btn btn-outline btn-sm" title="Sincronizar con Google Sheets">
+                <button type="button" id="btn-sync-data" class="btn btn-outline btn-sm"
+                    title="Sincronizar con Google Sheets">
                     <i data-lucide="refresh-cw" class="icon-xs"></i>
                     <span class="d-none d-md-inline">Sincronizar</span>
                 </button>
-                <button type="button" id="btn-open-settings" class="btn btn-outline btn-sm btn-icon-only" title="Configurar Google Sheet">
-                    <i data-lucide="settings" class="icon-xs"></i>
-                </button>
-                <button type="button" id="admin-logout-btn" class="btn btn-outline btn-sm text-danger" style="display: none;" title="Cerrar Sesión Admin">
+                <button type="button" id="admin-logout-btn" class="btn btn-outline btn-sm text-danger"
+                    style="display: none;" title="Cerrar Sesión Admin">
                     <i data-lucide="log-out" class="icon-xs"></i>
                 </button>
             </div>
@@ -86,29 +90,31 @@
              PESTAÑA 1: CONSULTA PÚBLICA DE PERSONAL (SIN CONTRASEÑA)
              ================================================================ -->
         <section id="view-consulta" class="tab-content-view">
-            
+
             <!-- Hero de Búsqueda -->
             <div class="search-hero">
                 <h2 class="search-hero-title">Consulta de Producción en Telesalud</h2>
                 <p class="search-hero-desc">
-                    Consulte sus atenciones registradas en <strong>Teleatiendo (TLH)</strong> y <strong>Otros Sistemas</strong>. Ingrese su Número de Documento (DNI, Carnet de Extranjería o Pasaporte).
+                    Consulte sus atenciones registradas en <strong>Teleatiendo (TLH)</strong> y <strong>Otros
+                        Sistemas</strong>. Ingrese su Número de Documento (DNI, Carnet de Extranjería o Pasaporte).
                 </p>
 
                 <div class="search-input-wrapper">
                     <i data-lucide="search" class="icon-sm"></i>
-                    <input type="text" id="public-doc-input" placeholder="Ingrese su DNI o N° de Documento (ej. 46358841)..." autocomplete="off" maxlength="20">
+                    <input type="text" id="public-doc-input"
+                        placeholder="Ingrese su DNI o N° de Documento (ej. 46358841)..." autocomplete="off"
+                        maxlength="20">
                     <button type="button" id="public-search-btn" class="btn btn-primary btn-search">
                         <i data-lucide="arrow-right" class="icon-xs"></i>
                         <span>Consultar</span>
                     </button>
                 </div>
 
-                <!-- Sugerencias rápidas para demostración -->
-                <div class="quick-samples">
-                    <span>Ejemplos rápidos:</span>
-                    <button type="button" class="quick-sample-dni" data-dni="46358841">46358841 (Obstetriz)</button>
-                    <button type="button" class="quick-sample-dni" data-dni="71288435">71288435 (Enfermero)</button>
-                    <button type="button" class="quick-sample-dni" data-dni="41480347">41480347 (Técnica)</button>
+                <div class="search-tip-note">
+                    <i data-lucide="info" class="icon-xs"></i>
+                    <span><strong>Nota para documentos con cero:</strong> Si su DNI o Carnet inicia con
+                        <strong>0</strong>, ingréselo a partir del primer número (ej. si es <code>08123456</code>,
+                        ingrese <code>8123456</code>).</span>
                 </div>
             </div>
 
@@ -116,19 +122,22 @@
             <div id="public-initial-state" class="search-initial-box">
                 <i data-lucide="file-badge-2"></i>
                 <h3>Búsqueda Rápida de Atenciones</h3>
-                <p>Escriba su número de documento en el buscador superior para ver su historial consolidado de actividades por meses, años y plataformas.</p>
+                <p>Escriba su número de documento en el buscador superior para ver su historial consolidado de
+                    actividades por meses, años y plataformas.</p>
             </div>
 
             <!-- Estado Vacío: No Encontrado -->
             <div id="public-empty-state" class="search-initial-box" style="display: none;">
                 <i data-lucide="alert-circle" class="text-warning"></i>
                 <h3>No se encontraron registros</h3>
-                <p>No se encontraron atenciones registradas para el documento <strong id="searched-doc-number"></strong>. Verifique que el número esté correctamente escrito o consulte con el Administrador.</p>
+                <p>No se encontraron atenciones registradas para el documento <strong
+                        id="searched-doc-number"></strong>. Verifique que el número esté correctamente escrito o
+                    consulte con el Administrador.</p>
             </div>
 
             <!-- Contenedor de Resultados (Perfil y Matriz) -->
             <div id="public-result-container" style="display: none;">
-                
+
                 <!-- Ficha de Identidad del Profesional -->
                 <div class="profile-card">
                     <div class="profile-main-info">
@@ -171,6 +180,15 @@
                         <i data-lucide="printer" class="icon-xs"></i>
                         <span>Imprimir Constancia</span>
                     </button>
+
+                    <!-- Historial de Sedes / Establecimientos donde laboró/registró -->
+                    <div id="personal-sedes-container" class="profile-sedes-container" style="display: none;">
+                        <div class="profile-sedes-title">
+                            <i data-lucide="map-pin" class="icon-xs text-primary"></i>
+                            <span>Establecimientos de Registro / Rotaciones de Sede:</span>
+                        </div>
+                        <div id="personal-sedes-list" class="profile-sedes-grid"></div>
+                    </div>
                 </div>
 
                 <!-- Tarjetas KPI Personales -->
@@ -225,8 +243,10 @@
                             <span>Desglose Mensual por Modalidades de Telesalud</span>
                         </h4>
                         <div class="d-flex gap-2">
-                            <span class="badge badge-tlh"><i data-lucide="circle-dot" class="icon-xs"></i> Teleatiendo (TLH)</span>
-                            <span class="badge badge-otros"><i data-lucide="circle" class="icon-xs"></i> Otros Sistemas</span>
+                            <span class="badge badge-tlh"><i data-lucide="circle-dot" class="icon-xs"></i> Teleatiendo
+                                (TLH)</span>
+                            <span class="badge badge-otros"><i data-lucide="circle" class="icon-xs"></i> Otros
+                                Sistemas</span>
                         </div>
                     </div>
 
@@ -238,12 +258,18 @@
                                         <th style="min-width: 140px;">Periodo</th>
                                         <th style="min-width: 160px;">Plataforma</th>
                                         <th class="text-center" title="Telemonitoreo (99499.10)">Telemonitoreo</th>
-                                        <th class="text-center" title="Teleorientación Síncrona (99499.08)">Teleorientación Síncrona</th>
-                                        <th class="text-center" title="Teleinterconsulta Síncrona (99499.01)">Teleinterconsulta Síncrona</th>
-                                        <th class="text-center" title="Teleinterconsulta Asíncrona (99499.02)">Teleinterconsulta Asíncrona</th>
-                                        <th class="text-center" title="Teleconsulta en Línea (99499.03)">Teleconsulta Línea</th>
-                                        <th class="text-center" title="Teleorientación Asíncrona (99499.09)">Teleorientación Asíncrona</th>
-                                        <th class="text-center" title="Telemamografía Fuera de Línea (99499.11)">Telemamografía</th>
+                                        <th class="text-center" title="Teleorientación Síncrona (99499.08)">
+                                            Teleorientación Síncrona</th>
+                                        <th class="text-center" title="Teleinterconsulta Síncrona (99499.01)">
+                                            Teleinterconsulta Síncrona</th>
+                                        <th class="text-center" title="Teleinterconsulta Asíncrona (99499.02)">
+                                            Teleinterconsulta Asíncrona</th>
+                                        <th class="text-center" title="Teleconsulta en Línea (99499.03)">Teleconsulta
+                                            Línea</th>
+                                        <th class="text-center" title="Teleorientación Asíncrona (99499.09)">
+                                            Teleorientación Asíncrona</th>
+                                        <th class="text-center" title="Telemamografía Fuera de Línea (99499.11)">
+                                            Telemamografía</th>
                                         <th class="text-center bg-highlight" style="min-width: 100px;">Total Mes</th>
                                     </tr>
                                 </thead>
@@ -343,10 +369,20 @@
                         <i data-lucide="filter" class="icon-sm text-primary"></i>
                         <span>Filtros Dinámicos del Reporte</span>
                     </div>
-                    <div class="d-flex gap-2">
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button type="button" id="btn-open-settings" class="btn btn-outline btn-sm"
+                            title="Configurar Google Sheet">
+                            <i data-lucide="settings" class="icon-xs"></i>
+                            <span>Configuración</span>
+                        </button>
                         <button type="button" id="admin-btn-reset-filters" class="btn btn-outline btn-sm">
                             <i data-lucide="rotate-ccw" class="icon-xs"></i>
                             <span>Restablecer</span>
+                        </button>
+                        <button type="button" id="btn-export-excel-nominal" class="btn btn-outline btn-sm"
+                            title="Descargar Padrón Nominal detallado (datos en crudo)">
+                            <i data-lucide="table-properties" class="icon-xs text-primary"></i>
+                            <span>Excel Padrón Nominal</span>
                         </button>
                         <button type="button" id="btn-export-excel-consolidado" class="btn btn-outline btn-sm">
                             <i data-lucide="download" class="icon-xs"></i>
@@ -408,7 +444,8 @@
                         <label class="form-label">Búsqueda Rápida</label>
                         <div style="position: relative;">
                             <i data-lucide="search" class="icon-xs"></i>
-                            <input type="text" id="admin-filter-search" class="form-control" placeholder="Buscar por personal, DNI, establecimiento o microred...">
+                            <input type="text" id="admin-filter-search" class="form-control"
+                                placeholder="Buscar por personal, DNI, establecimiento o microred...">
                         </div>
                     </div>
                 </div>
@@ -497,7 +534,8 @@
                             <i data-lucide="network" class="icon-sm text-primary"></i>
                             <span>Reporte Dinámico por MicroRed y Establecimiento</span>
                         </h4>
-                        <small class="text-muted">Haga clic en una MicroRed para colapsar o expandir sus establecimientos</small>
+                        <small class="text-muted">Haga clic en una MicroRed para colapsar o expandir sus
+                            establecimientos</small>
                     </div>
                 </div>
                 <div class="card-body p-0" id="admin-pivot-container">
@@ -536,18 +574,17 @@
             </div>
             <div class="modal-body">
                 <p class="text-muted fs-sm mb-3">
-                    Ingrese la contraseña de seguridad para acceder al panel de consolidado, reportes por microred y estadísticas de gestión.
+                    Ingrese la contraseña de seguridad para acceder al panel de consolidado, reportes por microred y
+                    estadísticas de gestión.
                 </p>
                 <div class="form-group">
                     <label class="form-label">Contraseña de Administrador</label>
-                    <input type="password" id="admin-password-input" class="form-control" placeholder="••••••••••••" autocomplete="current-password">
-                    <small id="admin-login-error" class="text-danger" style="display: none; font-size: 0.75rem; margin-top: 4px;">
+                    <input type="password" id="admin-password-input" class="form-control" placeholder="••••••••••••"
+                        autocomplete="current-password">
+                    <small id="admin-login-error" class="text-danger"
+                        style="display: none; font-size: 0.75rem; margin-top: 4px;">
                         Contraseña incorrecta.
                     </small>
-                </div>
-                <div class="p-2 bg-light rounded" style="font-size: 0.75rem; color: var(--text-muted);">
-                    <i data-lucide="info" class="icon-xs text-primary"></i>
-                    Clave predeterminada: <code>AdminTelesalud2026*</code>
                 </div>
             </div>
             <div class="modal-footer">
@@ -580,14 +617,17 @@
                 <p class="text-muted fs-sm mb-3">
                     Para conectar su hoja de Google Sheets y actualizar los datos en tiempo real:
                 </p>
-                <ol style="font-size: 0.8rem; color: var(--text-muted); padding-left: 1.25rem; margin-bottom: 1rem; line-height: 1.6;">
+                <ol
+                    style="font-size: 0.8rem; color: var(--text-muted); padding-left: 1.25rem; margin-bottom: 1rem; line-height: 1.6;">
                     <li>En su Google Sheet, vaya a <strong>Archivo &gt; Compartir &gt; Publicar en la web</strong>.</li>
-                    <li>Seleccione la pestaña de datos y el formato <strong>Valores separados por comas (.csv)</strong>.</li>
+                    <li>Seleccione la pestaña de datos y el formato <strong>Valores separados por comas (.csv)</strong>.
+                    </li>
                     <li>Haga clic en <strong>Publicar</strong>, copie el enlace y péguelo a continuación:</li>
                 </ol>
                 <div class="form-group">
                     <label class="form-label">URL del CSV Publicado de Google Sheets</label>
-                    <input type="text" id="settings-sheet-url-input" class="form-control" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv">
+                    <input type="text" id="settings-sheet-url-input" class="form-control"
+                        placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv">
                 </div>
             </div>
             <div class="modal-footer">
@@ -610,8 +650,10 @@
 
     <!-- Footer -->
     <footer class="footer-custom">
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2" style="max-width: 1440px; margin: 0 auto;">
-            <span>&copy; 2026 <strong>Unidad de Telesalud y Telemedicina</strong> - Sistema Integral de Producción</span>
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2"
+            style="max-width: 1440px; margin: 0 auto;">
+            <span>&copy; 2026 <strong>Unidad de Telesalud y Telemedicina - xzerox</strong> - Sistema Integral de
+                Producción</span>
             <span id="data-last-sync-time" style="color: var(--text-light);">Cargando...</span>
         </div>
     </footer>
@@ -628,4 +670,5 @@
     <script src="js/publicView.js"></script>
     <script src="js/app.js"></script>
 </body>
+
 </html>

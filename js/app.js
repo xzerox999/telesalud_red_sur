@@ -233,17 +233,6 @@ class App {
             if (e.key === "Enter") executeSearch();
         });
 
-        // Sugerencias rápidas (botones de muestra)
-        document.querySelectorAll(".quick-sample-dni")?.forEach(btn => {
-            btn.addEventListener("click", (e) => {
-                const dni = e.target.getAttribute("data-dni");
-                if (docInput && dni) {
-                    docInput.value = dni;
-                    executeSearch();
-                }
-            });
-        });
-
         // Filtros de Administrador
         const filterIds = [
             "admin-filter-anio", "admin-filter-mes", "admin-filter-microred",
@@ -299,6 +288,14 @@ class App {
         });
 
         // Exportaciones
+        document.getElementById("btn-export-excel-nominal")?.addEventListener("click", () => {
+            const filters = window.adminView.getActiveFilters();
+            const filteredRecords = window.dataEngine.applyFilters(this.rawData, filters);
+            const summary = `${filters.microred || 'Todas MR'} - ${filters.mes ? 'Mes ' + filters.mes : 'Todos los Meses'}`;
+            window.exportService.exportNominalRawToExcel(filteredRecords, summary);
+            this.showToast(`Padrón Nominal exportado (${filteredRecords.length.toLocaleString()} registros)`, "success");
+        });
+
         document.getElementById("btn-export-excel-pivot")?.addEventListener("click", () => {
             if (window.adminView.currentPivotData) {
                 const filters = window.adminView.getActiveFilters();
