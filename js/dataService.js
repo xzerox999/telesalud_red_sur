@@ -100,12 +100,15 @@ class DataService {
                 dynamicTyping: true,
                 complete: (results) => {
                     if (results.data && results.data.length > 0) {
-                        // Limpiar y normalizar encabezados
+                        // Limpiar y normalizar encabezados y textos corruptos (? -> Ñ)
                         const cleanedData = results.data.map(row => {
                             const cleanedRow = {};
                             Object.keys(row).forEach(key => {
                                 const cleanKey = key.trim();
-                                cleanedRow[cleanKey] = row[key];
+                                const val = row[key];
+                                cleanedRow[cleanKey] = (typeof val === "string" && window.dataEngine)
+                                    ? window.dataEngine.fixSpanishEncoding(val.trim())
+                                    : val;
                             });
                             return cleanedRow;
                         });

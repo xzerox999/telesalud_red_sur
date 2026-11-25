@@ -6,48 +6,62 @@ class AdminView {
         this.charts = {};
         this.currentPivotData = null;
         this.currentConsolidadoData = null;
+        this.currentRankingData = null;
+        this.rawRecordsRef = [];
+        this.multiSelects = {};
     }
 
     /**
      * Inicializa los controles y filtros del portal administrativo
      */
     initFilters(rawRecords) {
-        const options = window.dataEngine.getFilterOptions(rawRecords);
+        this.rawRecordsRef = rawRecords || [];
+        const options = window.dataEngine.getFilterOptions(this.rawRecordsRef);
+        const onFilterChange = () => {
+            if (window.app) window.app.applyAdminFilters();
+        };
 
-        // Año
-        const selAnio = document.getElementById("admin-filter-anio");
-        if (selAnio) {
-            selAnio.innerHTML = '<option value="">Todos los Años</option>';
-            options.anios.forEach(a => selAnio.innerHTML += `<option value="${a}">${a}</option>`);
-        }
-
-        // Mes
-        const selMes = document.getElementById("admin-filter-mes");
-        if (selMes) {
-            selMes.innerHTML = '<option value="">Todos los Meses</option>';
-            options.meses.forEach(m => {
-                const nombre = CONFIG.MESES_NOMBRES[m] || `Mes ${m}`;
-                selMes.innerHTML += `<option value="${m}">${nombre}</option>`;
+        // Año(s)
+        if (!this.multiSelects.anio) {
+            this.multiSelects.anio = new MultiSelect("admin-filter-anio-ms", {
+                allLabel: "Todos los Años",
+                onChange: onFilterChange
             });
         }
+        this.multiSelects.anio.setOptions(options.anios.map(a => ({ value: a, label: a })));
 
-        // MicroRed
-        const selMicro = document.getElementById("admin-filter-microred");
-        if (selMicro) {
-            selMicro.innerHTML = '<option value="">Todas las MicroRedes</option>';
-            options.microredes.forEach(mr => {
-                if (mr) selMicro.innerHTML += `<option value="${mr}">${mr}</option>`;
+        // Mes(es)
+        if (!this.multiSelects.mes) {
+            this.multiSelects.mes = new MultiSelect("admin-filter-mes-ms", {
+                allLabel: "Todos los Meses",
+                onChange: onFilterChange
             });
         }
+        this.multiSelects.mes.setOptions(options.meses.map(m => ({
+            value: m,
+            label: CONFIG.MESES_NOMBRES[m] || `Mes ${m}`
+        })));
 
-        // Establecimiento
-        const selEstab = document.getElementById("admin-filter-estab");
-        if (selEstab) {
-            selEstab.innerHTML = '<option value="">Todos los Establecimientos</option>';
-            options.establecimientos.forEach(est => {
-                if (est) selEstab.innerHTML += `<option value="${est}">${est}</option>`;
+        // MicroRed(es) -> Al cambiar, actualiza los EESS disponibles
+        if (!this.multiSelects.microred) {
+            this.multiSelects.microred = new MultiSelect("admin-filter-microred-ms", {
+                allLabel: "Todas las MicroRedes",
+                onChange: () => {
+                    this.updateEstabOptionsByMicrored();
+                    onFilterChange();
+                }
             });
         }
+        this.multiSelects.microred.setOptions(options.microredes.filter(Boolean).map(mr => ({ value: mr, label: mr })));
+
+        // Establecimiento(s)
+        if (!this.multiSelects.estab) {
+            this.multiSelects.estab = new MultiSelect("admin-filter-estab-ms", {
+                allLabel: "Todos los EESS",
+                onChange: onFilterChange
+            });
+        }
+        this.updateEstabOptionsByMicrored();
 
         // Profesión
         const selProf = document.getElementById("admin-filter-prof");
@@ -60,18 +74,65 @@ class AdminView {
     }
 
     /**
+     * Filtra dinámicamente los EESS según las MicroRedes seleccionadas
+     */
+    updateEstabOptionsByMicrored() {
+        if (!this.multiSelects.estab) return;
+        const selectedMicros = this.multiSelects.microred ? this.multiSelects.microred.getValues() : [];
+        let filteredRecords = this.rawRecordsRef;
+        if (selectedMicros.length > 0) {
+            const upperSet = new Set(selectedMicros.map(m => m.toUpperCase()));
+            filteredRecords = this.rawRecordsRef.filter(r =>
+                upperSet.has(String(r.MicroRed || "").trim().toUpperCase())
+            );
+        }
+        const opts = window.dataEngine.getFilterOptions(filteredRecords);
+        this.multiSelects.estab.setOptions(
+            opts.establecimientos.filter(Boolean).map(e => ({ value: e, label: e })),
+            true
+        );
+    }
+
+    /**
+     * Restablece todos los filtros (incluidos multi-selects)
+     */
+    resetFilters() {
+        Object.values(this.multiSelects).forEach(ms => ms.clear(true));
+        this.updateEstabOptionsByMicrored();
+        ["admin-filter-prof", "admin-filter-sistema", "admin-filter-search"].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = "";
+        });
+    }
+
+    /**
      * Obtiene los valores actuales de los filtros
      */
     getActiveFilters() {
         return {
-            anio: document.getElementById("admin-filter-anio")?.value || "",
-            mes: document.getElementById("admin-filter-mes")?.value || "",
-            microred: document.getElementById("admin-filter-microred")?.value || "",
-            establecimiento: document.getElementById("admin-filter-estab")?.value || "",
+            anio: this.multiSelects.anio ? this.multiSelects.anio.getValues() : [],
+            mes: this.multiSelects.mes ? this.multiSelects.mes.getValues() : [],
+            microred: this.multiSelects.microred ? this.multiSelects.microred.getValues() : [],
+            establecimiento: this.multiSelects.estab ? this.multiSelects.estab.getValues() : [],
             profesion: document.getElementById("admin-filter-prof")?.value || "",
             sistema: document.getElementById("admin-filter-sistema")?.value || "",
             search: document.getElementById("admin-filter-search")?.value || ""
         };
+    }
+
+    /**
+     * Genera un texto legible de los filtros activos para encabezados de Excel
+     */
+    getFilterSummaryText() {
+        const f = this.getActiveFilters();
+        const parts = [];
+        if (f.anio.length) parts.push(`Año: ${f.anio.join(", ")}`);
+        if (f.mes.length) parts.push(`Mes: ${f.mes.map(m => CONFIG.MESES_NOMBRES[m] || m).join(", ")}`);
+        if (f.microred.length) parts.push(`MicroRed: ${f.microred.join(", ")}`);
+        if (f.establecimiento.length) parts.push(`EESS: ${f.establecimiento.length <= 2 ? f.establecimiento.join(", ") : f.establecimiento.length + " seleccionados"}`);
+        if (f.profesion) parts.push(`Profesión: ${f.profesion}`);
+        if (f.sistema) parts.push(`Sistema: ${f.sistema}`);
+        return parts.length > 0 ? parts.join(" | ") : "Todos los registros";
     }
 
     /**
@@ -80,6 +141,7 @@ class AdminView {
     render(filteredRecords) {
         this.renderKPICards(filteredRecords);
         this.renderConsolidadoTable(filteredRecords);
+        this.renderStaffRanking(filteredRecords);
         this.renderPivotTable(filteredRecords);
         this.renderCharts(filteredRecords);
     }
@@ -119,14 +181,33 @@ class AdminView {
         const pctTLH = total > 0 ? ((tlh / total) * 100).toFixed(1) : 0;
         const pctOtros = total > 0 ? ((otros / total) * 100).toFixed(1) : 0;
 
-        this.setTxt("kpi-total-atenciones", total.toLocaleString());
-        this.setTxt("kpi-tlh-total", tlh.toLocaleString());
+        this.animateNumber("kpi-total-atenciones", total);
+        this.animateNumber("kpi-tlh-total", tlh);
         this.setTxt("kpi-tlh-pct", `${pctTLH}%`);
-        this.setTxt("kpi-otros-total", otros.toLocaleString());
+        this.animateNumber("kpi-otros-total", otros);
         this.setTxt("kpi-otros-pct", `${pctOtros}%`);
-        this.setTxt("kpi-personal-activo", staff.size.toLocaleString());
+        this.animateNumber("kpi-personal-activo", staff.size);
         this.setTxt("kpi-top-estab", topEstab);
         this.setTxt("kpi-top-estab-count", `${topCount.toLocaleString()} atenciones`);
+    }
+
+    /**
+     * Efecto de conteo numérico animado para KPIs
+     */
+    animateNumber(id, targetValue) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const end = Number(targetValue) || 0;
+        const duration = 450;
+        const startTime = performance.now();
+
+        const tick = (now) => {
+            const progress = Math.min((now - startTime) / duration, 1);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            el.textContent = Math.round(end * eased).toLocaleString();
+            if (progress < 1) requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
     }
 
     /**
@@ -177,6 +258,191 @@ class AdminView {
                 <td class="text-end fw-bold text-primary">${summary.totals.porcentajeTLH}% TLH</td>
             </tr>
         `;
+    }
+
+    /**
+     * Renderiza el Ranking de Personal de Salud y Desglose de Actividades
+     */
+    renderStaffRanking(records) {
+        const rankingData = window.dataEngine.getStaffRanking(records);
+        this.currentRankingData = rankingData;
+
+        const tbody = document.getElementById("admin-ranking-tbody");
+        const subtitleEl = document.getElementById("admin-ranking-subtitle");
+        const searchInput = document.getElementById("admin-ranking-search");
+        if (!tbody) return;
+
+        if (searchInput) searchInput.value = "";
+
+        const filters = this.getActiveFilters();
+        let subtitleText = "Todos los Establecimientos";
+        if (filters.establecimiento && filters.establecimiento.length > 0) {
+            subtitleText = `EESS: <strong>${filters.establecimiento.length <= 2 ? filters.establecimiento.join(", ") : filters.establecimiento.length + " seleccionados"}</strong>`;
+        } else if (filters.microred && filters.microred.length > 0) {
+            subtitleText = `MicroRed: <strong>${filters.microred.join(", ")}</strong>`;
+        }
+
+        if (subtitleEl) {
+            subtitleEl.innerHTML = `
+                <span>${subtitleText}</span> • 
+                <span class="badge badge-online">Top 10 de ${rankingData.totalPersonal} Profesionales</span> • 
+                <span class="badge badge-neutral">${rankingData.totalAtenciones.toLocaleString()} Atenciones</span>
+            `;
+        }
+
+        // En pantalla solo mostrar Top 10; en Excel se exportan todos
+        this.renderRankingRows(rankingData.ranking.slice(0, 10));
+    }
+
+    /**
+     * Genera una medalla SVG con el número perfectamente centrado adentro
+     */
+    getMedalSvg(rank) {
+        const palettes = {
+            1: { ribbon: "#ef4444", outer: "#ca8a04", inner: "#fde047", stroke: "#fef08a", text: "#713f12", title: "1° Lugar" },
+            2: { ribbon: "#3b82f6", outer: "#64748b", inner: "#e2e8f0", stroke: "#f8fafc", text: "#1e293b", title: "2° Lugar" },
+            3: { ribbon: "#0d9488", outer: "#c2410c", inner: "#fdba74", stroke: "#ffedd5", text: "#7c2d12", title: "3° Lugar" }
+        };
+        const p = palettes[rank];
+        if (!p) {
+            return `<span class="rank-badge rank-default">#${rank}</span>`;
+        }
+        return `
+            <span class="rank-medal-svg" title="${p.title} en Producción">
+                <svg width="40" height="44" viewBox="0 0 40 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 2H20L17 13H10L12 2Z" fill="${p.ribbon}" opacity="0.9"/>
+                    <path d="M28 2H20L23 13H30L28 2Z" fill="${p.ribbon}"/>
+                    <circle cx="20" cy="25" r="15" fill="${p.outer}"/>
+                    <circle cx="20" cy="25" r="12.5" fill="${p.inner}" stroke="${p.stroke}" stroke-width="1.5"/>
+                    <text x="20" y="30" text-anchor="middle" fill="${p.text}" font-family="Inter, sans-serif" font-weight="800" font-size="14">${rank}</text>
+                </svg>
+            </span>
+        `;
+    }
+
+    /**
+     * Renderiza las filas del ranking en la tabla
+     */
+    renderRankingRows(rankingList) {
+        const tbody = document.getElementById("admin-ranking-tbody");
+        if (!tbody) return;
+
+        if (!rankingList || rankingList.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center p-4 text-muted">
+                        <i data-lucide="inbox" class="icon-md text-muted mb-2 d-block mx-auto"></i>
+                        No se encontró personal registrado para los filtros actuales.
+                    </td>
+                </tr>
+            `;
+            if (window.lucide) lucide.createIcons();
+            return;
+        }
+
+        const top1Total = rankingList[0] ? rankingList[0].total : 1;
+
+        tbody.innerHTML = rankingList.map(s => {
+            const rankBadgeHtml = this.getMedalSvg(s.rank);
+
+            const progressPct = top1Total > 0 ? ((s.total / top1Total) * 100).toFixed(0) : 0;
+
+            const modPills = s.activeModalities && s.activeModalities.length > 0 
+                ? s.activeModalities.map(m => `
+                    <span class="mod-pill" title="${m.label}: ${m.count}">
+                        <i data-lucide="${m.icon || 'activity'}" class="icon-xs"></i>
+                        <strong>${m.count}</strong>
+                        <span>${m.label}</span>
+                    </span>
+                `).join('')
+                : '<span class="text-muted fs-xs">Sin actividades</span>';
+
+            return `
+                <tr class="ranking-row">
+                    <td class="text-center align-middle">${rankBadgeHtml}</td>
+                    <td class="align-middle">
+                        <div class="staff-info-cell">
+                            <span class="staff-name">${s.nombre}</span>
+                            <div class="staff-meta-row">
+                                <span class="tag-doc"><i data-lucide="id-card" class="icon-xs"></i> DNI: <strong>${s.documento}</strong></span>
+                                <span class="tag-prof"><i data-lucide="briefcase" class="icon-xs"></i> ${s.profesion}</span>
+                                <span class="tag-cond"><i data-lucide="badge-check" class="icon-xs"></i> ${s.condicion}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="align-middle">
+                        <div class="d-flex flex-column">
+                            <span class="fw-semibold text-dark fs-sm">🏥 ${s.establecimientosTexto}</span>
+                            <small class="text-muted fs-xs">MR: ${s.microredesTexto}</small>
+                        </div>
+                    </td>
+                    <td class="text-center align-middle">
+                        <span class="badge-system badge-tlh">${s.tlh} (${s.porcentajeTLH}%)</span>
+                    </td>
+                    <td class="text-center align-middle">
+                        <span class="badge-system badge-otros">${s.otros}</span>
+                    </td>
+                    <td class="align-middle text-end" style="min-width: 140px;">
+                        <div class="ranking-total-box">
+                            <span class="fs-6 fw-bold text-primary">${s.total.toLocaleString()}</span>
+                            <div class="ranking-progress-bar">
+                                <div class="ranking-progress-fill" style="width: ${progressPct}%"></div>
+                            </div>
+                            <small class="text-muted fs-xs">${s.porcentajeShare}% del total</small>
+                        </div>
+                    </td>
+                    <td class="align-middle" style="min-width: 240px;">
+                        <div class="modality-pills-wrap">
+                            ${modPills}
+                        </div>
+                    </td>
+                    <td class="text-center align-middle">
+                        <button type="button" class="btn btn-outline btn-xs btn-view-staff" data-dni="${s.documento}" title="Consultar historial individual">
+                            <i data-lucide="user-search" class="icon-xs"></i>
+                            <span>Ver Ficha</span>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }).join("");
+
+        // Conectar eventos para los botones de ver ficha individual
+        tbody.querySelectorAll(".btn-view-staff").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const dni = btn.getAttribute("data-dni");
+                if (dni && window.app) {
+                    window.app.switchTab("consulta");
+                    const input = document.getElementById("public-doc-input");
+                    if (input) input.value = dni;
+                    window.publicView.searchPersonnel(window.app.rawData, dni);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                }
+            });
+        });
+
+        if (window.lucide) lucide.createIcons();
+    }
+
+    /**
+     * Filtra la tabla de ranking en tiempo real según el término ingresado
+     */
+    filterRankingTable(term) {
+        if (!this.currentRankingData || !this.currentRankingData.ranking) return;
+        const q = (term || "").toLowerCase().trim();
+        if (!q) {
+            this.renderRankingRows(this.currentRankingData.ranking.slice(0, 10));
+            return;
+        }
+
+        const filtered = this.currentRankingData.ranking.filter(s => {
+            return s.nombre.toLowerCase().includes(q) ||
+                   s.documento.toLowerCase().includes(q) ||
+                   s.profesion.toLowerCase().includes(q) ||
+                   (s.establecimientosTexto && s.establecimientosTexto.toLowerCase().includes(q)) ||
+                   (s.microredesTexto && s.microredesTexto.toLowerCase().includes(q));
+        });
+
+        this.renderRankingRows(filtered.slice(0, 10));
     }
 
     /**
@@ -276,8 +542,18 @@ class AdminView {
     }
 
     /**
-     * Colapsa o expande filas de una MicroRed en la tabla dinámica
+     * Expande o colapsa todas las MicroRedes de la tabla dinámica
      */
+    expandAllMicroreds(expand = true) {
+        const container = document.getElementById("admin-pivot-container");
+        if (!container) return;
+        container.querySelectorAll(".microred-header-row .tree-toggle-icon").forEach(icon => {
+            icon.textContent = expand ? "▼" : "▶";
+        });
+        container.querySelectorAll(".estab-row").forEach(row => {
+            row.style.display = expand ? "" : "none";
+        });
+    }
     toggleMicroredRow(trElement) {
         const icon = trElement.querySelector(".tree-toggle-icon");
         let next = trElement.nextElementSibling;
@@ -383,17 +659,62 @@ class AdminView {
             };
             this.updateOrCreateChart("profesiones", profEl, options);
         }
+
+        // 5. Gráfico Evolución Mensual (Tendencia)
+        const evolEl = document.getElementById("chart-evolucion-mensual");
+        if (evolEl) {
+            const options = {
+                chart: { type: 'area', height: 280, fontFamily: 'Inter, sans-serif', toolbar: { show: false } },
+                series: [
+                    { name: 'Total Atenciones', data: analytics.evolucionTemporal.total },
+                    { name: 'Teleatiendo (TLH)', data: analytics.evolucionTemporal.tlh }
+                ],
+                xaxis: {
+                    categories: analytics.evolucionTemporal.categories,
+                    labels: { style: { fontSize: '11px' } }
+                },
+                colors: ['#0284c7', '#10b981'],
+                stroke: { curve: 'smooth', width: 2.5 },
+                fill: {
+                    type: 'gradient',
+                    gradient: { shadeIntensity: 1, opacityFrom: 0.35, opacityTo: 0.05 }
+                },
+                dataLabels: { enabled: false },
+                legend: { position: 'top' },
+                grid: { borderColor: 'rgba(148, 163, 184, 0.2)' }
+            };
+            this.updateOrCreateChart("evolucionMensual", evolEl, options);
+        }
     }
 
     /**
      * Utilidad para crear o actualizar instancias de ApexCharts
      */
     updateOrCreateChart(chartId, element, options) {
+        const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+        const themedOptions = {
+            ...options,
+            theme: { mode: isDark ? "dark" : "light" },
+            chart: {
+                ...(options.chart || {}),
+                background: "transparent"
+            }
+        };
         if (this.charts[chartId]) {
-            this.charts[chartId].updateOptions(options);
+            this.charts[chartId].updateOptions(themedOptions);
         } else {
-            this.charts[chartId] = new ApexCharts(element, options);
+            this.charts[chartId] = new ApexCharts(element, themedOptions);
             this.charts[chartId].render();
+        }
+    }
+
+    /**
+     * Re-renderiza los gráficos al cambiar de tema (Claro / Oscuro)
+     */
+    refreshChartsTheme() {
+        if (window.app && window.app.rawData) {
+            const filtered = window.dataEngine.applyFilters(window.app.rawData, this.getActiveFilters());
+            this.renderCharts(filtered);
         }
     }
 }

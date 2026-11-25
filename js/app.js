@@ -12,9 +12,45 @@ class App {
      * Inicialización general al cargar el DOM
      */
     async init() {
+        this.initTheme();
         this.checkAuthSession();
         this.bindEvents();
         await this.loadInitialData();
+    }
+
+    /**
+     * Inicializa el tema Claro / Oscuro desde localStorage
+     */
+    initTheme() {
+        const saved = localStorage.getItem(CONFIG.STORAGE_KEYS.THEME) || "light";
+        this.applyTheme(saved);
+    }
+
+    /**
+     * Aplica el tema y actualiza el botón de la barra superior
+     */
+    applyTheme(theme) {
+        const isDark = theme === "dark";
+        document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
+        localStorage.setItem(CONFIG.STORAGE_KEYS.THEME, isDark ? "dark" : "light");
+
+        const iconEl = document.getElementById("theme-toggle-icon");
+        const labelEl = document.getElementById("theme-toggle-label");
+        if (iconEl) iconEl.setAttribute("data-lucide", isDark ? "sun" : "moon");
+        if (labelEl) labelEl.textContent = isDark ? "Claro" : "Oscuro";
+        if (window.lucide) lucide.createIcons();
+
+        if (window.adminView && typeof window.adminView.refreshChartsTheme === "function") {
+            window.adminView.refreshChartsTheme();
+        }
+    }
+
+    /**
+     * Alterna entre tema claro y oscuro
+     */
+    toggleTheme() {
+        const current = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+        this.applyTheme(current === "dark" ? "light" : "dark");
     }
 
     /**
@@ -233,12 +269,11 @@ class App {
             if (e.key === "Enter") executeSearch();
         });
 
-        // Filtros de Administrador
-        const filterIds = [
-            "admin-filter-anio", "admin-filter-mes", "admin-filter-microred",
-            "admin-filter-estab", "admin-filter-prof", "admin-filter-sistema"
-        ];
-        filterIds.forEach(id => {
+        // Tema Claro / Oscuro
+        document.getElementById("btn-theme-toggle")?.addEventListener("click", () => this.toggleTheme());
+
+        // Filtros de Administrador (Profesión y Sistema)
+        ["admin-filter-prof", "admin-filter-sistema"].forEach(id => {
             document.getElementById(id)?.addEventListener("change", () => this.applyAdminFilters());
         });
 
@@ -251,12 +286,7 @@ class App {
 
         // Botón Limpiar Filtros
         document.getElementById("admin-btn-reset-filters")?.addEventListener("click", () => {
-            filterIds.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.value = "";
-            });
-            const searchEl = document.getElementById("admin-filter-search");
-            if (searchEl) searchEl.value = "";
+            window.adminView.resetFilters();
             this.applyAdminFilters();
             this.showToast("Filtros restablecidos", "info");
         });
@@ -288,18 +318,33 @@ class App {
         });
 
         // Exportaciones
+        document.getElementById("btn-export-excel-eess-report")?.addEventListener("click", () => {
+            const filters = window.adminView.getActiveFilters();
+            const filteredRecords = window.dataEngine.applyFilters(this.rawData, filters);
+            const summary = window.adminView.getFilterSummaryText();
+            window.exportService.exportEessExecutiveReportToExcel(filteredRecords, summary);
+            this.showToast(`Reporte Ejecutivo EESS exportado (${filteredRecords.length.toLocaleString()} registros)`, "success");
+        });
+
         document.getElementById("btn-export-excel-nominal")?.addEventListener("click", () => {
             const filters = window.adminView.getActiveFilters();
             const filteredRecords = window.dataEngine.applyFilters(this.rawData, filters);
-            const summary = `${filters.microred || 'Todas MR'} - ${filters.mes ? 'Mes ' + filters.mes : 'Todos los Meses'}`;
+            const summary = window.adminView.getFilterSummaryText();
             window.exportService.exportNominalRawToExcel(filteredRecords, summary);
             this.showToast(`Padrón Nominal exportado (${filteredRecords.length.toLocaleString()} registros)`, "success");
         });
 
+        document.getElementById("btn-export-excel-ranking")?.addEventListener("click", () => {
+            if (window.adminView.currentRankingData) {
+                const summary = window.adminView.getFilterSummaryText();
+                window.exportService.exportStaffRankingToExcel(window.adminView.currentRankingData, summary);
+                this.showToast(`Ranking completo exportado (${window.adminView.currentRankingData.ranking.length} profesionales)`, "success");
+            }
+        });
+
         document.getElementById("btn-export-excel-pivot")?.addEventListener("click", () => {
             if (window.adminView.currentPivotData) {
-                const filters = window.adminView.getActiveFilters();
-                const summary = `${filters.microred || 'Todas MR'} - ${filters.mes ? 'Mes ' + filters.mes : 'Todos los Meses'}`;
+                const summary = window.adminView.getFilterSummaryText();
                 window.exportService.exportPivotToExcel(window.adminView.currentPivotData, summary);
                 this.showToast("Reporte Excel descargado", "success");
             }
@@ -310,6 +355,19 @@ class App {
                 window.exportService.exportConsolidadoToExcel(window.adminView.currentConsolidadoData);
                 this.showToast("Consolidado Excel descargado", "success");
             }
+        });
+
+        // Búsqueda en vivo en la tabla de Ranking
+        document.getElementById("admin-ranking-search")?.addEventListener("input", (e) => {
+            window.adminView.filterRankingTable(e.target.value);
+        });
+
+        // Expandir / Colapsar todas las MicroRedes en tabla dinámica
+        document.getElementById("btn-pivot-expand-all")?.addEventListener("click", () => {
+            window.adminView.expandAllMicroreds(true);
+        });
+        document.getElementById("btn-pivot-collapse-all")?.addEventListener("click", () => {
+            window.adminView.expandAllMicroreds(false);
         });
 
         // Impresión de constancia

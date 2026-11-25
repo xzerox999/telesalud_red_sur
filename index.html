@@ -63,11 +63,16 @@
                 </button>
             </nav>
 
-            <!-- Acciones Rápidas (Badge de conexión, Sincronizar) -->
+            <!-- Acciones Rápidas (Badge de conexión, Tema, Sincronizar) -->
             <div class="nav-actions">
                 <div id="data-source-badge" class="badge badge-neutral" title="Estado de la fuente de datos">
                     <i data-lucide="database" class="icon-xs"></i> Base Local
                 </div>
+                <button type="button" id="btn-theme-toggle" class="btn btn-outline btn-sm btn-theme-toggle"
+                    title="Cambiar entre Tema Claro y Oscuro" aria-label="Cambiar tema">
+                    <i id="theme-toggle-icon" data-lucide="moon" class="icon-xs"></i>
+                    <span class="d-none d-md-inline" id="theme-toggle-label">Oscuro</span>
+                </button>
                 <button type="button" id="btn-sync-data" class="btn btn-outline btn-sm"
                     title="Sincronizar con Google Sheets">
                     <i data-lucide="refresh-cw" class="icon-xs"></i>
@@ -93,6 +98,14 @@
 
             <!-- Hero de Búsqueda -->
             <div class="search-hero">
+                <div class="hero-svg-deco" aria-hidden="true">
+                    <svg viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="60" cy="60" r="54" stroke="rgba(255,255,255,0.14)" stroke-width="2" stroke-dasharray="6 4"/>
+                        <circle cx="60" cy="60" r="38" fill="rgba(56,189,248,0.12)" stroke="rgba(186,230,253,0.35)" stroke-width="1.5"/>
+                        <path d="M24 62H42L49 44L58 78L66 54L72 62H96" stroke="#7dd3fc" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+                        <circle cx="60" cy="24" r="4" fill="#38bdf8"/>
+                    </svg>
+                </div>
                 <h2 class="search-hero-title">Consulta de Producción en Telesalud</h2>
                 <p class="search-hero-desc">
                     Consulte sus atenciones registradas en <strong>Teleatiendo (TLH)</strong> y <strong>Otros
@@ -120,7 +133,16 @@
 
             <!-- Estado Inicial: Guía de Uso -->
             <div id="public-initial-state" class="search-initial-box">
-                <i data-lucide="file-badge-2"></i>
+                <div class="initial-svg-illustration" aria-hidden="true">
+                    <svg width="110" height="90" viewBox="0 0 110 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="14" y="14" width="68" height="52" rx="10" fill="var(--primary-light)" stroke="var(--primary)" stroke-width="2"/>
+                        <rect x="24" y="26" width="28" height="6" rx="3" fill="var(--primary)"/>
+                        <rect x="24" y="38" width="44" height="4" rx="2" fill="var(--text-light)"/>
+                        <rect x="24" y="47" width="34" height="4" rx="2" fill="var(--text-light)"/>
+                        <circle cx="80" cy="58" r="18" fill="var(--bg-surface)" stroke="var(--primary)" stroke-width="2.5"/>
+                        <path d="M72 58H77L80 51L83 65L86 58H90" stroke="var(--primary)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
                 <h3>Búsqueda Rápida de Atenciones</h3>
                 <p>Escriba su número de documento en el buscador superior para ver su historial consolidado de
                     actividades por meses, años y plataformas.</p>
@@ -379,6 +401,11 @@
                             <i data-lucide="rotate-ccw" class="icon-xs"></i>
                             <span>Restablecer</span>
                         </button>
+                        <button type="button" id="btn-export-excel-eess-report" class="btn btn-success btn-sm"
+                            title="Descargar Reporte Ejecutivo + Detalle por EESS y Personal (estilo profesional)">
+                            <i data-lucide="file-check-2" class="icon-xs"></i>
+                            <span>Excel Reporte EESS</span>
+                        </button>
                         <button type="button" id="btn-export-excel-nominal" class="btn btn-outline btn-sm"
                             title="Descargar Padrón Nominal detallado (datos en crudo)">
                             <i data-lucide="table-properties" class="icon-xs text-primary"></i>
@@ -397,31 +424,23 @@
 
                 <div class="filter-grid">
                     <div class="form-group mb-0">
-                        <label class="form-label">Año</label>
-                        <select id="admin-filter-anio" class="form-control">
-                            <option value="">Todos los Años</option>
-                        </select>
+                        <label class="form-label">Año(s)</label>
+                        <div id="admin-filter-anio-ms"></div>
                     </div>
 
                     <div class="form-group mb-0">
-                        <label class="form-label">Mes</label>
-                        <select id="admin-filter-mes" class="form-control">
-                            <option value="">Todos los Meses</option>
-                        </select>
+                        <label class="form-label">Mes(es)</label>
+                        <div id="admin-filter-mes-ms"></div>
                     </div>
 
                     <div class="form-group mb-0">
-                        <label class="form-label">MicroRed</label>
-                        <select id="admin-filter-microred" class="form-control">
-                            <option value="">Todas las MicroRedes</option>
-                        </select>
+                        <label class="form-label">MicroRed(es)</label>
+                        <div id="admin-filter-microred-ms"></div>
                     </div>
 
                     <div class="form-group mb-0">
-                        <label class="form-label">Establecimiento</label>
-                        <select id="admin-filter-estab" class="form-control">
-                            <option value="">Todos los Establecimientos</option>
-                        </select>
+                        <label class="form-label">Establecimiento(s) EESS</label>
+                        <div id="admin-filter-estab-ms"></div>
                     </div>
 
                     <div class="form-group mb-0">
@@ -499,6 +518,57 @@
                 </div>
             </div>
 
+            <!-- ================================================================
+                 RANKING DE PERSONAL Y DESGLOSE DE ACTIVIDADES POR ESTABLECIMIENTO
+                 ================================================================ -->
+            <div class="card mb-4" id="admin-staff-ranking-card">
+                <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div>
+                        <h4 class="card-title">
+                            <i data-lucide="trophy" class="icon-sm text-warning"></i>
+                            <span>Ranking de Personal de Salud y Desglose de Actividades</span>
+                        </h4>
+                        <div id="admin-ranking-subtitle" class="ranking-subtitle-badges">
+                            <span>Todos los Establecimientos</span>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <div class="ranking-search-box">
+                            <i data-lucide="search" class="icon-xs"></i>
+                            <input type="text" id="admin-ranking-search" class="form-control form-control-sm"
+                                placeholder="Buscar personal, DNI o profesión...">
+                        </div>
+                        <button type="button" id="btn-export-excel-ranking" class="btn btn-outline btn-sm"
+                            title="Descargar ranking de personal a Excel">
+                            <i data-lucide="download" class="icon-xs"></i>
+                            <span>Exportar Ranking</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle m-0 ranking-table">
+                            <thead>
+                                <tr>
+                                    <th class="text-center" style="width: 75px;">Puesto</th>
+                                    <th style="min-width: 240px;">Profesional de la Salud</th>
+                                    <th style="min-width: 180px;">Sede de Registro</th>
+                                    <th class="text-center" style="width: 110px;">TLH</th>
+                                    <th class="text-center" style="width: 80px;">Otros</th>
+                                    <th class="text-end" style="min-width: 140px;">Total Atenciones</th>
+                                    <th style="min-width: 240px;">Desglose de Modalidades</th>
+                                    <th class="text-center" style="width: 100px;">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-ranking-tbody">
+                                <!-- Filas generadas dinámicamente por AdminView -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <!-- Fila de Gráficos Analíticos -->
             <div class="charts-grid">
                 <div class="chart-card">
@@ -524,11 +594,19 @@
                     </div>
                     <div id="chart-distribucion-modalidad"></div>
                 </div>
+
+                <div class="chart-card">
+                    <div class="chart-title">
+                        <i data-lucide="trending-up" class="icon-sm text-primary"></i>
+                        <span>Evolución Mensual de Atenciones</span>
+                    </div>
+                    <div id="chart-evolucion-mensual"></div>
+                </div>
             </div>
 
             <!-- Tabla Dinámica Pivot: MicroRed -> Establecimiento (Hoja TABLA) -->
             <div class="card">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <div>
                         <h4 class="card-title">
                             <i data-lucide="network" class="icon-sm text-primary"></i>
@@ -536,6 +614,16 @@
                         </h4>
                         <small class="text-muted">Haga clic en una MicroRed para colapsar o expandir sus
                             establecimientos</small>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button" id="btn-pivot-expand-all" class="btn btn-outline btn-xs">
+                            <i data-lucide="chevrons-down" class="icon-xs"></i>
+                            <span>Expandir todo</span>
+                        </button>
+                        <button type="button" id="btn-pivot-collapse-all" class="btn btn-outline btn-xs">
+                            <i data-lucide="chevrons-up" class="icon-xs"></i>
+                            <span>Colapsar todo</span>
+                        </button>
                     </div>
                 </div>
                 <div class="card-body p-0" id="admin-pivot-container">
@@ -665,6 +753,7 @@
     <script src="js/config.js"></script>
     <script src="js/dataService.js"></script>
     <script src="js/dataEngine.js"></script>
+    <script src="js/multiSelect.js"></script>
     <script src="js/exportService.js"></script>
     <script src="js/adminView.js"></script>
     <script src="js/publicView.js"></script>

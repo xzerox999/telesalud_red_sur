@@ -3,11 +3,41 @@
  */
 class DataEngine {
     /**
+     * Corrige caracteres corruptos (? o \uFFFD) típicos de archivos ANSI/Latin1 leídos como UTF-8
+     */
+    fixSpanishEncoding(str) {
+        if (str === null || str === undefined) return "";
+        let text = String(str);
+        if (!text.includes("?") && !text.includes("\uFFFD")) return text;
+
+        // Reemplazar palabras conocidas con tilde corrupta
+        const wordFixes = [
+            [/ORIENTACI[?\uFFFD]N/gi, "ORIENTACIÓN"],
+            [/S[?\uFFFD]NCRONA/gi, "SÍNCRONA"],
+            [/AS[?\uFFFD]NCRONA/gi, "ASÍNCRONA"],
+            [/L[?\uFFFD]NEA/gi, "LÍNEA"],
+            [/MAMOGRAF[?\uFFFD]A/gi, "MAMOGRAFÍA"],
+            [/ATENCI[?\uFFFD]N/gi, "ATENCIÓN"],
+            [/PROFESI[?\uFFFD]N/gi, "PROFESIÓN"],
+            [/CONDICI[?\uFFFD]N/gi, "CONDICIÓN"],
+            [/GESTI[?\uFFFD]N/gi, "GESTIÓN"]
+        ];
+        wordFixes.forEach(([regex, replacement]) => {
+            text = text.replace(regex, replacement);
+        });
+
+        // Reemplazar ? o \uFFFD dentro de palabras (ej. NU?EZ -> NUÑEZ, ORDO?EZ -> ORDOÑEZ, CHAI?A -> CHAIÑA)
+        text = text.replace(/([A-ZÁÉÍÓÚÜ])[?\uFFFD]([A-ZÁÉÍÓÚÜ])/g, "$1Ñ$2");
+        text = text.replace(/([a-záéíóúü])[?\uFFFD]([a-záéíóúü])/g, "$1ñ$2");
+        return text;
+    }
+
+    /**
      * Normaliza un texto para comparaciones seguras
      */
     cleanText(val) {
         if (val === null || val === undefined) return "";
-        return String(val).trim();
+        return this.fixSpanishEncoding(String(val).trim());
     }
 
     /**
@@ -43,17 +73,29 @@ class DataEngine {
     }
 
     /**
-     * Aplica filtros a la colección de datos
+     * Aplica filtros a la colección de datos (soporta valores simples o múltiples arrays)
      */
     applyFilters(records, filters = {}) {
         if (!records || !Array.isArray(records)) return [];
 
+        const matchMulti = (filterVal, recordVal, caseInsensitive = false) => {
+            if (!filterVal) return true;
+            if (Array.isArray(filterVal)) {
+                if (filterVal.length === 0) return true;
+                const target = caseInsensitive ? String(recordVal || "").trim().toUpperCase() : String(recordVal || "").trim();
+                return filterVal.some(v => (caseInsensitive ? String(v).trim().toUpperCase() : String(v).trim()) === target);
+            }
+            const target = caseInsensitive ? String(recordVal || "").trim().toUpperCase() : String(recordVal || "").trim();
+            const expected = caseInsensitive ? String(filterVal).trim().toUpperCase() : String(filterVal).trim();
+            return target === expected;
+        };
+
         return records.filter(r => {
-            if (filters.anio && String(r.Anio) !== String(filters.anio)) return false;
-            if (filters.mes && String(r.Mes) !== String(filters.mes)) return false;
-            if (filters.microred && String(r.MicroRed).toUpperCase() !== String(filters.microred).toUpperCase()) return false;
-            if (filters.establecimiento && String(r.Nombre_Establecimiento).toUpperCase() !== String(filters.establecimiento).toUpperCase()) return false;
-            if (filters.profesion && String(r.Descripcion_Profesion).toUpperCase() !== String(filters.profesion).toUpperCase()) return false;
+            if (!matchMulti(filters.anio, r.Anio, false)) return false;
+            if (!matchMulti(filters.mes, r.Mes, false)) return false;
+            if (!matchMulti(filters.microred, r.MicroRed, true)) return false;
+            if (!matchMulti(filters.establecimiento, r.Nombre_Establecimiento, true)) return false;
+            if (!matchMulti(filters.profesion, r.Descripcion_Profesion, true)) return false;
             if (filters.sistema) {
                 const isTLH = this.isTeleatiendo(r.Lote);
                 if (filters.sistema === "TLH" && !isTLH) return false;
@@ -354,8 +396,8 @@ class DataEngine {
         // 4. Modalidades distribución
         const modCounts = {};
 
-        // 5. Evolución temporal
-        const timeCounts = {};
+        // 5. Evolución temporal (ordenada cronológicamente Año-Mes)
+        const timeMap = {};
 
         records.forEach(r => {
             const isTLH = this.isTeleatiendo(r.Lote);
@@ -370,9 +412,18 @@ class DataEngine {
             const cat = this.normalizeCategory(r.Descripcion_Item);
             modCounts[cat] = (modCounts[cat] || 0) + 1;
 
-            const mes = r.Mes ? (CONFIG.MESES_NOMBRES[String(r.Mes)] || `Mes ${r.Mes}`) : "Julio";
-            timeCounts[mes] = (timeCounts[mes] || 0) + 1;
+            const anio = String(r.Anio || "2026").trim();
+            const mesNum = String(r.Mes || "1").trim();
+            const sortKey = `${anio}-${mesNum.padStart(2, "0")}`;
+            const label = `${CONFIG.MESES_NOMBRES[mesNum] || "Mes " + mesNum} ${anio}`;
+            if (!timeMap[sortKey]) {
+                timeMap[sortKey] = { label, total: 0, tlh: 0, otros: 0 };
+            }
+            timeMap[sortKey].total++;
+            if (isTLH) timeMap[sortKey].tlh++; else timeMap[sortKey].otros++;
         });
+
+        const sortedTimeKeys = Object.keys(timeMap).sort();
 
         // Top 10 Establecimientos
         const topEstablecimientos = Object.entries(estabCounts)
@@ -398,8 +449,10 @@ class DataEngine {
                 series: Object.values(modCounts)
             },
             evolucionTemporal: {
-                categories: Object.keys(timeCounts),
-                data: Object.values(timeCounts)
+                categories: sortedTimeKeys.map(k => timeMap[k].label),
+                total: sortedTimeKeys.map(k => timeMap[k].total),
+                tlh: sortedTimeKeys.map(k => timeMap[k].tlh),
+                otros: sortedTimeKeys.map(k => timeMap[k].otros)
             }
         };
     }
@@ -428,6 +481,92 @@ class DataEngine {
             microredes: Array.from(microredes).sort(),
             establecimientos: Array.from(establecimientos).sort(),
             profesiones: Array.from(profesiones).sort()
+        };
+    }
+
+    /**
+     * Genera el Ranking de Productividad de Personal con Desglose de Modalidades
+     */
+    getStaffRanking(records) {
+        if (!records || records.length === 0) {
+            return { ranking: [], totalAtenciones: 0, totalPersonal: 0, modalidades: CONFIG.MODALIDADES };
+        }
+
+        const staffMap = {};
+        const modalidadesKeys = CONFIG.MODALIDADES.map(m => m.key);
+        let grandTotal = 0;
+
+        records.forEach(r => {
+            const doc = this.cleanText(r.Numero_Documento_Personal) || "SIN_DOC";
+            const name = this.cleanText(r.Personal) || "No Registrado";
+            const key = `${doc}__${name}`;
+
+            if (!staffMap[key]) {
+                staffMap[key] = {
+                    documento: doc,
+                    nombre: name,
+                    profesion: this.cleanText(r.Descripcion_Profesion) || "No Especificado",
+                    colegio: this.cleanText(r.Descripcion_Colegio) || "No Registrado",
+                    condicion: this.cleanText(r.Descripcion_Condicion) || "No Registrado",
+                    establecimientos: new Set(),
+                    microredes: new Set(),
+                    total: 0,
+                    tlh: 0,
+                    otros: 0,
+                    modalidades: {}
+                };
+                modalidadesKeys.forEach(k => staffMap[key].modalidades[k] = 0);
+            }
+
+            const staffObj = staffMap[key];
+            if (r.Nombre_Establecimiento) staffObj.establecimientos.add(this.cleanText(r.Nombre_Establecimiento));
+            if (r.MicroRed) staffObj.microredes.add(this.cleanText(r.MicroRed));
+
+            const isTLH = this.isTeleatiendo(r.Lote);
+            if (isTLH) staffObj.tlh++; else staffObj.otros++;
+            staffObj.total++;
+            grandTotal++;
+
+            // Mapear modalidad
+            const itemDesc = this.cleanText(r.Descripcion_Item).toUpperCase();
+            const normDesc = this.stripAccents(itemDesc);
+            const matchedKey = modalidadesKeys.find(k => normDesc.includes(this.stripAccents(k))) || "TELEMONITOREO";
+            staffObj.modalidades[matchedKey] = (staffObj.modalidades[matchedKey] || 0) + 1;
+        });
+
+        const rankingList = Object.values(staffMap).map(s => {
+            const pctTLH = s.total > 0 ? ((s.tlh / s.total) * 100).toFixed(1) : 0;
+            const pctShare = grandTotal > 0 ? ((s.total / grandTotal) * 100).toFixed(1) : 0;
+            
+            // Extraer modalidades con conteo > 0 ordenadas desc
+            const activeModalities = Object.entries(s.modalidades)
+                .filter(([_, count]) => count > 0)
+                .sort((a, b) => b[1] - a[1])
+                .map(([key, count]) => {
+                    const modConfig = CONFIG.MODALIDADES.find(m => m.key === key) || { label: key, icon: "activity" };
+                    return { key, label: modConfig.label, count, icon: modConfig.icon };
+                });
+
+            return {
+                ...s,
+                establecimientosTexto: Array.from(s.establecimientos).join(", "),
+                microredesTexto: Array.from(s.microredes).join(", "),
+                porcentajeTLH: pctTLH,
+                porcentajeShare: pctShare,
+                activeModalities
+            };
+        }).sort((a, b) => b.total - a.total);
+
+        // Asignar puestos de ranking
+        rankingList.forEach((item, index) => {
+            item.rank = index + 1;
+        });
+
+        return {
+            ranking: rankingList,
+            totalAtenciones: grandTotal,
+            totalPersonal: rankingList.length,
+            modalidades: CONFIG.MODALIDADES
         };
     }
 }

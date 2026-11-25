@@ -489,5 +489,113 @@ body {
     .brand-section { justify-content: center; }
     .tab-navigation { width: 100%; justify-content: center; }
     .nav-tab-btn { flex: 1; justify-content: center; }
+    .nav-actions { justify-content: center; flex-wrap: wrap; }
     .main-wrapper { padding: 1rem; }
+}
+
+/* Botón Success */
+.btn-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: #ffffff;
+    border: none;
+    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.28);
+}
+
+.btn-success:hover {
+    filter: brightness(1.06);
+    transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   TEMA OSCURO (DARK MODE)
+   ========================================================================== */
+[data-theme="dark"] {
+    --bg-body: #0b1120;
+    --bg-surface: #111827;
+    --bg-glass: rgba(17, 24, 39, 0.88);
+    --border-color: #1f2937;
+    --border-subtle: #1e293b;
+
+    --text-main: #f1f5f9;
+    --text-muted: #94a3b8;
+    --text-light: #64748b;
+
+    --primary-light: rgba(14, 165, 233, 0.16);
+    --color-tlh-bg: rgba(14, 165, 233, 0.16);
+    --color-otros-bg: rgba(245, 158, 11, 0.16);
+    --success-bg: rgba(16, 185, 129, 0.16);
+    --danger-bg: rgba(239, 68, 68, 0.16);
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 10px rgba(0, 0, 0, 0.45);
+    --shadow-lg: 0 10px 20px rgba(0, 0, 0, 0.5);
+}
+
+[data-theme="dark"] .form-control,
+[data-theme="dark"] select.form-control,
+[data-theme="dark"] input.form-control {
+    background-color: #0f172a;
+    color: var(--text-main);
+    border-color: #334155;
+}
+
+[data-theme="dark"] .table thead th {
+    background-color: #0f172a;
+    color: #cbd5e1;
+    border-bottom-color: #334155;
+}
+
+[data-theme="dark"] .table td {
+    border-color: #1f2937;
+    color: var(--text-main);
+}
+
+[data-theme="dark"] .table-hover tbody tr:hover {
+    background-color: rgba(56, 189, 248, 0.06);
+}
+
+[data-theme="dark"] .text-dark {
+    color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .tab-navigation {
+    background: #0f172a;
+    border-color: #1e293b;
+}
+
+[data-theme="dark"] .nav-tab-btn.active {
+    background: #1e293b;
+    color: #38bdf8;
+}
+
+[data-theme="dark"] .btn-outline {
+    background: #0f172a;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .btn-outline:hover {
+    background: #1e293b;
+    border-color: #38bdf8;
+}
+
+[data-theme="dark"] .modal-card {
+    background: #111827;
+    border: 1px solid #334155;
+}
+
+[data-theme="dark"] .mod-pill,
+[data-theme="dark"] .rank-default,
+[data-theme="dark"] .tag-doc {
+    background: #1e293b;
+    border-color: #334155;
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .estab-row td {
+    background: #111827;
+}
+
+[data-theme="dark"] .microred-header-row td {
+    background: rgba(14, 165, 233, 0.12);
 }
